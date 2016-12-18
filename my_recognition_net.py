@@ -21,12 +21,14 @@ def preprocess_im(image_path):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dir", type=str, default="images/sm_cropped/")
+parser.add_argument("--big_im_dir", type=str, default="images/")
 options = parser.parse_args()
 
 im_dir = vars(options)['dir']
+big_im_dir = vars(options)['big_im_dir']
 
 # generate dict {name => 0010...0} where 1 is on the i`th place and name is like {walrus, bear, ...}
-keys = [os.path.splitext(f)[0].translate(None, digits) for f in sorted(os.listdir('images')) if f.endswith('.jpg') and not f.startswith('white1024cube')]
+keys = [os.path.splitext(f)[0].translate(None, digits) for f in sorted(os.listdir(big_im_dir)) if f.endswith('.jpg') and not f.startswith('white1024cube')]
 values = np.diag(np.ones(len(keys)))
 objects = dict(zip(keys, values))
 
@@ -65,7 +67,7 @@ for name in filenames:
 	model.train_on_batch(im, y)
 
 
-im = preprocess_im('images/small/bear.jpg')
+im = preprocess_im('images/sm_cropped/bear1.jpg')
 predict = model.predict_on_batch(im)
 print predict
 print "end"
