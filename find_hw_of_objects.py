@@ -25,7 +25,7 @@ if __name__ == '__main__':
 	directory = sys.argv[1]
 	dimensions = []
 	for filename in sorted(os.listdir(directory)):
-		w,h,image = edge_detect(directory + '/' + filename, 128, 255)
+		w,h,image = edge_detect(directory + filename, 128, 255)
 		dimensions.append([h,w])
 		cv2.imshow('res', image)
 		cv2.waitKey(0)
