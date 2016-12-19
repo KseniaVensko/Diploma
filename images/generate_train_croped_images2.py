@@ -61,7 +61,7 @@ parser.add_argument("--b", type=float, default=0, help="lrbu")
 parser.add_argument("--area", type=float, default=0.5)
 parser.add_argument("--start", type=int, default=0)
 parser.add_argument("--count", type=int, default=10)
-parser.add_argument("--out_dir", type=str, default='small_cropped/')
+parser.add_argument("--out_dir", type=str, default='training_images/')
 options = parser.parse_args()
 l = vars(options)['l']
 r = vars(options)['r']
@@ -73,13 +73,15 @@ start_index = vars(options)['start']
 count = vars(options)['count']
 output_directory = vars(options)['out_dir']
 
+if not os.path.exists(output_directory):
+    os.makedirs(output_directory)
+
+
 im = Image.open(name).convert('RGBA')
 im_pixels = np.array(im)
 im_copy = np.array(im)
 w,h = im.size
 low_x, high_x, low_y, high_y = get_sides(w,h,l,r,u,b)
-print w,h
-print low_x, high_x, low_y, high_y 
 
 i=start_index
 # y changes by -->
