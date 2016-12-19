@@ -13,6 +13,7 @@ import argparse
 import os
 from string import digits
 from images_utils import draw_image, putLogo, create_blank
+import socket_utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dir", type=str, default="images/training_im/")
@@ -39,16 +40,6 @@ def initialize_model():
 
 	model.compile(optimizer='adam', loss='mse')
 	return model
-
-def initialize_sockets(port):
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	s.bind(('0.0.0.0', port))
-
-	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
-	return s, sock
 
 def teaching(model, x, y):
 	x = x.reshape((1,-1))
@@ -78,7 +69,7 @@ def get_coordinates(name1, name2, name3):
 	return y
 
 model = initialize_model()
-listening_sock, sending_sock = initialize_sockets(port)
+listening_sock, sending_sock = socket_utils.initialize_sockets(port)
 print 'initialization complete'
 
 while True:

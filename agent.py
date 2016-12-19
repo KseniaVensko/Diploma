@@ -1,17 +1,9 @@
 import socket
+import socket_utils
 
-def initialize_sockets(port):
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	s.bind(('0.0.0.0', port))
-
-	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
-	return s, sock
 
 port = 7777
-listening_sock, sending_sock = initialize_sockets(port)
+listening_sock, sending_sock = socket_utils.initialize_sockets(port)
 
 #while True:
 #~ data = 'simplenetteaching,10,11,22,23,34,35,16,17,18,29,291,292,393,394,395'
