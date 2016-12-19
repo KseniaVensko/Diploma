@@ -1,8 +1,13 @@
 import socket
 import socket_utils
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--port", type=int, default=7777)
+options = parser.parse_args()
 
-port = 7777
+port = vars(options)['port']
+
 listening_sock, sending_sock = socket_utils.initialize_sockets(port)
 
 #while True:
