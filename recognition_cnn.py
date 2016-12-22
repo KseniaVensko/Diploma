@@ -1,7 +1,6 @@
 #from __future__ import print_function
 import numpy as np
 np.random.seed(1337)  # for reproducibility
-
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -33,11 +32,17 @@ pool_size = (2, 2)
 # convolution kernel size
 kernel_size = (3, 3)
 input_shape = (3, img_rows, img_cols)
-im_dir = 'images/training_im/'
+im_dir = 'images/2training_im/'
 
 # generate dict {name => 0010...0} where 1 is on the i`th place and name is like {walrus, bear, ...}
 keys = [os.path.splitext(f)[0].translate(None, digits) for f in sorted(os.listdir(im_dir)) if f.endswith('.jpg')]
 keys = np.unique(np.asarray(keys)).tolist()
+
+with open('objects.txt', 'w+') as f:
+	for i in keys:
+		f.write(i + "\n")
+		
+print "written"
 nb_classes = len(keys)
 # TODO: 0 - should be "I don`t know" and 1:nb_classes+1 - classes of images
 values = range(nb_classes)
@@ -75,9 +80,13 @@ for name in filenames:
 	print 'training ' + str(name) + ' ' + str(y)
 	model.train_on_batch(im, y)
 
-im = preprocess_im('images/sm_cropped/kangoro50.jpg')
+im = preprocess_im('images/small/sheep.jpg')
 predict = model.predict_on_batch(im)
 print predict
+im = preprocess_im('images/small/bear.jpg')
+predict = model.predict_on_batch(im)
+print predict
+model.save('recognition_model.h5')
 print "end"
 #~ model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
           #~ verbose=1, validation_data=(X_test, Y_test))
