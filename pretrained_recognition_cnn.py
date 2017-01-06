@@ -16,35 +16,45 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="recognition_model.h5")
 parser.add_argument("--port", type=int, default=7777)
 options = parser.parse_args()
+global port
+global listening_sock, sending_sock
+global model
 
-model_file = vars(options)['model']
-port = vars(options)['port']
+def initialize():
+	model_file = vars(options)['model']
+	global port
+	port = vars(options)['port']
 
-logger.write_to_log(my_name, "load sockets and model")
-listening_sock, sending_sock = socket_utils.initialize_sockets(port)
-model = load_model(model_file)
-logger.write_to_log(my_name, "sockets and model are loaded")
-keys = []
-with open('objects.txt') as f:
-        for line in f:
-            keys.append(line.rstrip('\n'))
-#~ nb_classes = len(keys)
-#~ values = range(nb_classes)
-#~ val = np_utils.to_categorical(values, nb_classes)
-#~ objects = dict(zip(keys, val))
+	logger.write_to_log(my_name, "load sockets and model")
+	global listening_sock, sending_sock
+	listening_sock, sending_sock = socket_utils.initialize_sockets(port)
+	global model
+	model = load_model(model_file)
+	logger.write_to_log(my_name, "sockets and model are loaded")
+	keys = []
 
-logger.write_to_log(my_name, "object keys" + str(keys))
-logger.write_to_log(my_name, "initialization complete")
-print "initialization complete"
+	with open('objects.txt') as f:
+			for line in f:
+				keys.append(line.rstrip('\n'))
+	#~ nb_classes = len(keys)
+	#~ values = range(nb_classes)
+	#~ val = np_utils.to_categorical(values, nb_classes)
+	#~ objects = dict(zip(keys, val))
+
+	logger.write_to_log(my_name, "object keys" + str(keys))
+	logger.write_to_log(my_name, "initialization complete")
+	print "initialization complete"
 
 def decode_predictions(predict):
 	# predict is like [[ 0.2, 0.99, ...]]
 	predict = np.asarray(predict[0])
 	# get indices of objects, that have the probability higher, than coef
-	# TODO: ypu need to sort them
-	ob = [ n for n,i in enumerate(predict) if i>coef ][-objects_count:]
+	# and get maximum values
+	ob = [ (n,i) for n,i in enumerate(predict) if i>coef ]
+	ob.sort(key=lambda x: x[1])
+	ob = ob[-objects_count:]
 	seen_objects = []
-	for i in ob:
+	for i,n in ob:
 		seen_objects.append(keys[i])
 	
 	return seen_objects
@@ -55,8 +65,10 @@ def preprocess_im(image_path):
 	image = np.expand_dims(image, axis=0)
 	image = image.astype('float32')
 	image /= 255
+	
 	return image
 
+initialize()
 while True:
 	mes = listening_sock.recv(1024)
 	logger.write_to_log(my_name, "received mes " + mes)
