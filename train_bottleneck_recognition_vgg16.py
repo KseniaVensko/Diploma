@@ -109,6 +109,12 @@ def find_labels(data_dir):
 	# find all classes in order like flow_from_directory uses
 	keys = [d for d in sorted(os.listdir(data_dir))]
 	keys = np.unique(np.asarray(keys)).tolist()
+	
+	# write to file for pretrained_recognition_cnn to use
+	with open('objects.txt', 'w+') as f:
+	for i in keys:
+		f.write(i + "\n")
+	
 	nb_classes = len(keys)
 	values = range(nb_classes)
 	train_classes = np_utils.to_categorical(values, nb_classes)
