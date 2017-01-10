@@ -8,6 +8,7 @@ from keras.layers import Activation, Dropout, Flatten, Dense
 from keras.utils import np_utils
 import logger
 from keras.preprocessing import image as image_utils
+from keras.models import load_model
 
 def preprocess_im(image_path):
 	image = image_utils.load_img(image_path)
@@ -83,8 +84,10 @@ top_model.load_weights(top_model_weights_path)
 model.add(top_model)
 
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-
+model.save('pretrained_vgg16.h5')
+del model
+model = load_model('pretrained_vgg16.h5')
 for p in sorted(os.listdir('images/test_without_walrus/')):
 	im = preprocess_im('images/test_without_walrus/' + p)
-	predict = model.predict_proba(im)
+	predict = model.predict_classes(im)
 	print "for " + p + " prediction is " + str(predict)
