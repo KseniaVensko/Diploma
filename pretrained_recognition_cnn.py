@@ -6,14 +6,16 @@ import numpy as np
 from keras.utils import np_utils
 from keras.preprocessing import image as image_utils
 import time
+from PIL import Image
 
 my_name = "pretrained_recognition"
 coef = 0.8
 objects_count = 3
 objects = {}
+img_width, img_height = 128, 128
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", type=str, default="recognition_model.h5")
+parser.add_argument("--model", type=str, default="pretrained_vgg16.h5")
 parser.add_argument("--port", type=int, default=7777)
 options = parser.parse_args()
 global port
@@ -37,21 +39,19 @@ def initialize():
 	with open('objects.txt') as f:
 			for line in f:
 				keys.append(line.rstrip('\n'))
-	#~ nb_classes = len(keys)
-	#~ values = range(nb_classes)
-	#~ val = np_utils.to_categorical(values, nb_classes)
-	#~ objects = dict(zip(keys, val))
 
 	logger.write_to_log(my_name, "object keys" + str(keys))
 	logger.write_to_log(my_name, "initialization complete")
 	print "initialization complete"
 
-def decode_predictions(predict):
+def decode_predict_proba(predict):
 	# predict is like [[ 0.2, 0.99, ...]]
-	predict = np.asarray(predict[0])
+	predict = predict[0]
+	summ = sum(predict)
+	percentage_predict = [x / summ for x in predict]
 	# get indices of objects, that have the probability higher, than coef
 	# and get maximum values
-	ob = [ (n,i) for n,i in enumerate(predict) if i>coef ]
+	ob = [ (n,i) for n,i in enumerate(percentage_predict) if i>coef ]
 	ob.sort(key=lambda x: x[1])
 	ob = ob[-objects_count:]
 	seen_objects = []
@@ -61,6 +61,16 @@ def decode_predictions(predict):
 	return seen_objects
 
 def preprocess_im(image_path):
+		# terrible crutch for resizing images (TODO(1))
+	im = Image.open(image_path)
+	width, height = im.size
+	if width != img_width or height != img_height:
+	# TODO: watch the order
+	# this is a bad practise
+		im = im.resize((img_width,img_height))
+		im.save(image_path)
+	im.close()
+	
 	image = image_utils.load_img(image_path)
 	image = image_utils.img_to_array(image)
 	image = np.expand_dims(image, axis=0)
@@ -85,9 +95,9 @@ while True:
 		mes = mes.split(',')
 		path = mes[1]
 		im = preprocess_im(path)
-		predict = model.predict_on_batch(im)
+		predict = model.predict_proba(im)
 		logger.write_to_log(my_name, "predict " + str(predict))
-		seen_objects = decode_predictions(predict)
+		seen_objects = decode_predict_proba(predict)
 		logger.write_to_log(my_name, "seen objects " + str(seen_objects))
 		data = 'seenobjects:' + str(seen_objects)
 		sending_sock.sendto(data, ('<broadcast>', port))
