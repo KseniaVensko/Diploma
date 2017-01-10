@@ -18,7 +18,7 @@ parser.add_argument("--port", type=int, default=7777)
 options = parser.parse_args()
 global port
 global listening_sock, sending_sock
-global model
+global model, keys
 
 def initialize():
 	model_file = vars(options)['model']
@@ -31,6 +31,7 @@ def initialize():
 	global model
 	model = load_model(model_file)
 	logger.write_to_log(my_name, "sockets and model are loaded")
+	global keys
 	keys = []
 
 	with open('objects.txt') as f:
