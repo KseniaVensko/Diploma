@@ -9,16 +9,16 @@ im_dir = sys.argv[2]
 if not os.path.exists(im_dir):
     os.makedirs(im_dir)
 
-h_big = 600
-w_big = 600
+h_big = 300
+w_big = 300
     
 im = cv2.imread(im_path)
 h, w, g = im.shape
 while h_big < h:
-	h_big += 100
+	h_big += 10
 w_big = h_big
 while w_big < w:
-	w_big += 100
+	w_big += 10
 h_big = w_big
 
 base=np.empty((h_big,w_big,3),dtype=np.uint8)
