@@ -115,6 +115,10 @@ def draw_image(name1, name2, name3, result_size, objects_dict, images_folder, x1
 	name3_clear = os.path.splitext(os.path.basename(name3))[0].translate(None, digits)
 	result_name = images_folder + name1_clear + '_' + name2_clear + '_' + name3_clear + '.jpg'
 	canvas = cv2.resize(canvas, (result_size, result_size))
+	
+	if not os.path.exists(images_folder):
+		os.makedirs(images_folder)
+		
 	cv2.imwrite(result_name, canvas)
 	
 	return result_name
