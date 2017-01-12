@@ -3,25 +3,22 @@ from keras.layers import Dense
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 #from sklearn.metrics import mean_squared_error
-import math
-import keras.layers.advanced_activations as aa
 from keras import initializations
-import socket
-import cv2
-from scipy import ndimage
 import argparse
 import os
 from string import digits
 import images_utils
 import socket_utils
-from polygon_actions import *
 import logger
-import time
+from PIL import Image
+from polygon_actions import *
 
-my_name="simple_net"
+my_name="generating_net"
+current_y_sequence = []
+current_x_sequence = []
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dir", type=str, default="images/other/")
+parser.add_argument("--dir", type=str, default="images/big_without_walrus/")
 parser.add_argument("--result", type=str, default="images/result/result.jpg")
 parser.add_argument("--port", type=int, default=7777)
 options = parser.parse_args()
@@ -36,72 +33,121 @@ max_dimension = 1
 scaler = MinMaxScaler(feature_range=(0,1))
 objects_dimensions = np.asarray([])
 objects_dict = {}
+object_coefs = None
+threshold = 0.8
+locate_model = None
+selecting_model = None
+keys = []
 
 def my_init(shape, name=None):
     return initializations.uniform(shape, scale=0.5, name=name)
 
-def initialize_model():
+def resize_images_to_standard_size(paths):
+	for path in paths:
+		im = Image.open(path)
+		width, height = im.size
+		if width != image_side_size or height != image_side_size:
+			im = im.resize((image_side_size, image_side_size))
+			im.save(path)
+		im.close()
+
+def initialize_models():
 	logger.write_to_log(my_name, "initialize objects_dict")
+	global keys
 	keys = [images_folder + f for f in sorted(os.listdir(images_folder)) if f.endswith('.jpg')]
+	
+	# TODO: maybe this is a bad practise
+	resize_images_to_standard_size(keys)
+	
 	objects_dimensions = images_utils.find_objects_hw(images_folder)
 	objects_dict = dict(zip(keys, objects_dimensions))
 	logger.write_to_log(my_name, "initialization of objects_dict complete")
+	
+	objects_count = len(keys)
+	global object_coefs
+	object_coefs = np.random.random_integers(100, size=objects_count)
+	logger.write_to_log(my_name, "starting object_coefs " + str(object_coefs))
+	
+	selecting_model = Sequential()
+	# for start let take 1+objects_count inputs - last for random number and one for each object coefficient
+	selecting_model.add(Dense(8, input_dim=objects_count+1, activation='relu'))
+	selecting_model.add(Dense(8, activation='relu'))
+	selecting_model.add(Dense(objects_count, activation='softmax'))
+	# output is like [ 0.2, 0.99, ... ] and we take only those which is more than treshold and then choose 3
+	selecting_model.compile(optimizer='adam', loss='mse')
+	
 	# divide h/w
 	b = np.divide(objects_dimensions[:,3],objects_dimensions[:,2])
 	b = b.reshape(-1,1)
 	scaler.fit(b)
 	epoch_size = 64*4
 	inputs = 3
-	model = Sequential()
+	locate_model = Sequential()
 	# input: h1/w1 h2/w2 h3/w3
-	model.add(Dense(12, init=my_init, input_dim=inputs, activation='relu'))
-	model.add(Dense(12, init=my_init))
-	model.add(Dense(9, init=my_init, activation='relu'))
+	locate_model.add(Dense(12, init=my_init, input_dim=inputs, activation='relu'))
+	locate_model.add(Dense(12, init=my_init, activation='relu'))
+	locate_model.add(Dense(9, init=my_init, activation='relu'))
 	# output: x1 y1 a1 x2 y2 a2 x3 y3 a3
+	locate_model.compile(optimizer='adam', loss='mse')
+	
+	logger.write_to_log(my_name, "initialization of models complete")
+	return locate_model, selecting_model, objects_dict
 
-	model.compile(optimizer='adam', loss='mse')
-	logger.write_to_log(my_name, "initialization of model complete")
-	return model, objects_dict
-
-def teaching(model, x, y):
+def teaching(locate_model, x, y):
 	logger.write_to_log(my_name, 'teaching ' + str(x) + ' ' + str(y))
 	x = x.reshape((1,-1))
 	y = y.reshape((1,-1))
 	print 'teaching ' + str(x) + ' ' + str(y)
-	#model.train_on_batch(x, y)
-	return model
+	locate_model.train_on_batch(x, y)
+	return locate_model
 
-def check_image_shape(im_path):
-	img = cv2.imread(im_path)
-	h, w, c = img.shape
-	logger.write_to_log(my_name, "checking image size " + "h " + str(h) + "w " + str(w))
-	if h != image_side_size or w != image_side_size or c != 3:
-		return False
-	return True
+def decode_select_predict(predict):
+	# predict is like [[ 0.2, 0.99, ...]]
+	predict = predict[0]
+	# get indices of objects, that have the probability higher, than coef
+	# and get maximum values
+	ob = [ (n,i) for n,i in enumerate(predict) if i>threshold ]
+	ob.sort(key=lambda x: x[1])
+	objects_count = 3
+	ob = ob[-objects_count:]
+	selected_objects = []
+	for i,n in ob:
+		selected_objects.append(keys[i])
+	
+	return selected_objects
+
+def get_random_images_names():
+	i1 = np.random.random_integers(len(keys)) - 1
+	im1 = keys[i1]
+	# TODO: I removed check_image_shape because it doesnot matter, test it
+	i2 = np.random.random_integers(len(keys)) - 1
+	im2 = keys[i2]
+	while im1.translate(None, digits) == im2.translate(None, digits):
+		i2 = np.random.random_integers(len(keys)) - 1
+		im2 = keys[i2]
+	i3 = np.random.random_integers(len(keys)) - 1
+	im3 = keys[i3]
+	while im1.translate(None, digits) == im3.translate(None, digits) or im2.translate(None, digits) == im3.translate(None, digits):
+		i3 = np.random.random_integers(len(keys)) - 1
+		im3 = keys[i3]
+	logger.write_to_log(my_name, "got random images names " + im1 + ", " + im2 + ", " + im3)
+	selected = [im1,im2,im3]
+	return selected
 	
 def get_images_names():
-	# TODO: get 3 different objects more elegantly
-	# TODO: images can be sheep3 and sheep4. Why? I fixed it, but not sure if now it is correct
-	images = [f for f in sorted(os.listdir(images_folder)) if f.endswith('.jpg')]
-	i1 = np.random.random_integers(len(images)) - 1
-	im1 = images[i1]
-	while not check_image_shape(images_folder + images[i1]):
-		i1 = np.random.random_integers(len(images)) - 1
-		im1 = images[i1]
-	i2 = np.random.random_integers(len(images)) - 1
-	im2 = images[i2]
-	while im1.translate(None, digits) == im2.translate(None, digits) or not check_image_shape(images_folder + images[i2]):
-		i2 = np.random.random_integers(len(images)) - 1
-		im2 = images[i2]
-	i3 = np.random.random_integers(len(images)) - 1
-	im3 = images[i3]
-	while not check_image_shape(images_folder + images[i3]) or im1.translate(None, digits) == im3.translate(None, digits) or im2.translate(None, digits) == im3.translate(None, digits):
-		i3 = np.random.random_integers(len(images)) - 1
-		im3 = images[i3]
-	logger.write_to_log(my_name, "got images names " + images_folder + images[i1] + ", " + images_folder + images[i2] + ", " + images_folder + images[i3])
-	
-	return images_folder + images[i1], images_folder + images[i2], images_folder + images[i3]
-	
+	r = np.random.random_integers(100)
+	x = np.copy(object_coefs)
+	x = np.append(x,r)
+	x = x.reshape((1,) + x.shape)
+	predict = selecting_model.predict(x)
+	selected_objects = decode_select_predict(predict)
+	logger.write_to_log(my_name, "got selected images names " + str(selected_objects))
+	if len(selected_objects) < 2:
+		selected_objects = get_random_images_names()
+	# TODO: refactor
+	return selected_objects[0], selected_objects[1], selected_objects[2]
+
+#TODO: check correctness because its not	
 def generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3):
 	output = np.zeros(shape=9, dtype=np.float)
 	output[0] = np.random.random_integers(image_side_size - w1) - 1	# x1
@@ -139,25 +185,25 @@ def get_coordinates(name1, name2, name3):
 	x2,y2,w2,h2 = objects_dict[name2]
 	x3,y3,w3,h3 = objects_dict[name3]
 	x = np.asarray([h1/w1, h2/w2, h3/w3])
+	global current_x_sequence
+	current_x_sequence = x
 	# normalisation
 #	x = scaler.transform(x)
 	x = x.reshape(1,-1)
-	#print 'x ', x
-	predict = model.predict_on_batch(x)
+	predict = locate_model.predict_on_batch(x)
 	predict = predict[0]
 	logger.write_to_log(my_name, "predicted coords " + str(predict))
 	
 	if not check_if_correct(predict,h1,w1,h2,w2,h3,w3):
 		predict = generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3)
-	#print predict
 #	predict = scaler.inverse_transform(predict)
-#	y = np.asarray([1,2,45,3,4,20,1,1,45])
-	print predict
+	global current_y_sequence
+	current_y_sequence = predict
 	return predict
 
 # TODO: why not working the line below
 #if __name__ == 'main':
-model, objects_dict = initialize_model()
+locate_model, selecting_model, objects_dict = initialize_models()
 listening_sock, sending_sock = socket_utils.initialize_sockets(port)
 print 'initialization complete'
 
@@ -165,23 +211,20 @@ while True:
 	mes = listening_sock.recv(1024)
 	logger.write_to_log(my_name, "received mes " + mes)
 	# simplenetteaching,h1/w1,h2/w2,h3/w3,x1,y1,a1,x2,y2,a2,x3,y3,a3
-	if mes.startswith('simplenetteaching'):
-		mes = mes.split(',')
-		x = np.asarray(map(int, mes[1:4]))
-		y = np.asarray(map(int, mes[4:]))
-		teaching(model, x, y)
-		data = 'simplenetsuccess'
+	if mes.startswith('generatingnetteaching'):
+		#~ mes = mes.split(',')
+		#~ x = np.asarray(map(int, mes[1:4]))
+		#~ y = np.asarray(map(int, mes[4:]))
+		x = current_x_sequence
+		y = current_y_sequence
+		teaching(locate_model, x, y)
+		data = 'generatingnetsuccess'
 		sending_sock.sendto(data, ('<broadcast>', port))
 
 	elif mes.startswith('generate'):
 		n1,n2,n3 = get_images_names()
 		x1,y1,a1,x2,y2,a2,x3,y3,a3 = get_coordinates(n1, n2, n3)
-		result_name = images_utils.draw_image(n1,n2,n3,image_side_size,objects_dict,'images/result/', x1,y1,a1,x2,y2,a2,x3,y3,a3)
+		result_name = images_utils.draw_image(n1,n2,n3,image_side_size,objects_dict,'images/result2/', x1,y1,a1,x2,y2,a2,x3,y3,a3)
 		logger.write_to_log(my_name, "name of result image " + result_name)
 		data = 'imagegenerated,' + result_name
 		sending_sock.sendto(data, ('<broadcast>', port))
-
-
-#train_on_batch(self, x, y, class_weight=None, sample_weight=None)
-
-#score = model.evaluate(x_test, y_test, batch_size=1)
