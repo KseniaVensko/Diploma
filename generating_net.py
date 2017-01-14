@@ -12,7 +12,9 @@ import socket_utils
 import logger
 from PIL import Image
 from polygon_actions import *
+import math
 
+randint = np.random.random_integers
 my_name="generating_net"
 current_y_sequence = []
 current_x_sequence = []
@@ -65,7 +67,7 @@ def initialize_models():
 	
 	objects_count = len(keys)
 	global object_coefs
-	object_coefs = np.random.random_integers(100, size=objects_count)
+	object_coefs = randint(100, size=objects_count)
 	logger.write_to_log(my_name, "starting object_coefs " + str(object_coefs))
 	
 	selecting_model = Sequential()
@@ -86,8 +88,8 @@ def initialize_models():
 	# input: h1/w1 h2/w2 h3/w3
 	locate_model.add(Dense(12, init=my_init, input_dim=inputs, activation='relu'))
 	locate_model.add(Dense(12, init=my_init, activation='relu'))
-	locate_model.add(Dense(9, init=my_init, activation='relu'))
-	# output: x1 y1 a1 x2 y2 a2 x3 y3 a3
+	locate_model.add(Dense(12, init=my_init, activation='relu'))
+	# output: x1 y1 a1 s1 x2 y2 a2 s2 x3 y3 a3 s3
 	locate_model.compile(optimizer='adam', loss='mse')
 	
 	logger.write_to_log(my_name, "initialization of models complete")
@@ -117,25 +119,25 @@ def decode_select_predict(predict):
 	return selected_objects
 
 def get_random_images_names():
-	i1 = np.random.random_integers(len(keys)) - 1
+	i1 = randint(len(keys)) - 1
 	im1 = keys[i1]
 	# TODO: I removed check_image_shape because it doesnot matter, test it
-	i2 = np.random.random_integers(len(keys)) - 1
+	i2 = randint(len(keys)) - 1
 	im2 = keys[i2]
 	while im1.translate(None, digits) == im2.translate(None, digits):
-		i2 = np.random.random_integers(len(keys)) - 1
+		i2 = randint(len(keys)) - 1
 		im2 = keys[i2]
-	i3 = np.random.random_integers(len(keys)) - 1
+	i3 = randint(len(keys)) - 1
 	im3 = keys[i3]
 	while im1.translate(None, digits) == im3.translate(None, digits) or im2.translate(None, digits) == im3.translate(None, digits):
-		i3 = np.random.random_integers(len(keys)) - 1
+		i3 = randint(len(keys)) - 1
 		im3 = keys[i3]
 	logger.write_to_log(my_name, "got random images names " + im1 + ", " + im2 + ", " + im3)
 	selected = [im1,im2,im3]
 	return selected
 	
 def get_images_names():
-	r = np.random.random_integers(100)
+	r = randint(100)
 	x = np.copy(object_coefs)
 	x = np.append(x,r)
 	x = x.reshape((1,) + x.shape)
@@ -145,57 +147,94 @@ def get_images_names():
 	if len(selected_objects) < 2:
 		selected_objects = get_random_images_names()
 	# TODO: refactor
-	return selected_objects[0], selected_objects[1], selected_objects[2]
+	return selected_objects
 
 #TODO: check correctness because its not	
 def generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3):
-	output = np.zeros(shape=9, dtype=np.float)
-	output[0] = np.random.random_integers(image_side_size - w1) - 1	# x1
-	output[1] = np.random.random_integers(image_side_size - h1) - 1	# y1
-	output[2] = np.random.random_integers(360) - 1				# angle1
-	
-	output[3] = 0 if w2 == 0 else np.random.random_integers(image_side_size - w2) - 1
-	output[4] = 0 if w2 == 0 else np.random.random_integers(image_side_size - h2) - 1
-	output[5] = 0 if w2 == 0 else np.random.random_integers(360) - 1
-	while (not correct_second_polygon(output[:6], h1, w1, h2, w2)):
-		output[3] = 0 if w2 == 0 else np.random.random_integers(image_side_size - w2) - 1
-		output[4] = 0 if w2 == 0 else np.random.random_integers(image_side_size - h2) - 1
-		output[5] = 0 if w2 == 0 else np.random.random_integers(360) - 1
+	output = np.zeros(shape=12, dtype=np.float)
 
-	output[6] = 0 if w3 == 0 else np.random.random_integers(image_side_size - w3) - 1
-	output[7] = 0 if w3 == 0 else np.random.random_integers(image_side_size - h3) - 1
-	output[8] = 0 if w3 == 0 else np.random.random_integers(360) - 1
-	while (not correct_third_polygon(output, h1, w1, h2, w2, h3, w3)):
-		output[6] = 0 if w3 == 0 else np.random.random_integers(image_side_size - w3) - 1
-		output[7] = 0 if w3 == 0 else np.random.random_integers(image_side_size - h3) - 1
-		output[8] = 0 if w3 == 0 else np.random.random_integers(360) - 1
-	
+	x1,y1,a1,s1,points_rotated1 = generate_polygon(w1,h1,image_side_size,True)
+	output[:4] = x1,y1,a1,s1
+	correct = False
+	if w2 != 0 and h2 != 0:
+		if w3 != 0 and h3 != 0:
+			while not correct:
+				x1,y1,a1,s1,points_rotated1 = generate_polygon(w1,h1,image_side_size,True)
+				x2,y2,a2,s2,points_rotated2 = generate_polygon(w2,h2, image_side_size)
+				x3,y3,a3,s3,points_rotated3 = generate_polygon(w3,h3,image_side_size)
+				correct = correct_third_polygon(points_rotated1, points_rotated2, points_rotated3)
+			output[:4] = x1,y1,a1,s1
+			output[4:8] = x2,y2,a2,s2
+			output[8:] = x3,y3,a3,s3
+		else:
+			while not correct:
+				x1,y1,a1,s1,points_rotated1 = generate_polygon(w1,h1,image_side_size)
+				x2,y2,a2,s2,points_rotated2 = generate_polygon(w2,h2, image_side_size)
+				correct = correct_second_polygon(points_rotated1, points_rotated2)
+			output[:4] = x1,y1,a1,s1
+			output[4:8] = x2,y2,a2,s2
+		
+	#~ if w2 != 0:
+		#~ output[4] = randint(image_side_size - w2) - 1
+		#~ output[5] = randint(image_side_size - h2) - 1
+		#~ output[6] = randint(360) - 1
+		#~ output[7] = np.random.uniform(0.5,2,1)[0]
+		#~ while (not correct_second_polygon(output[:8], h1, w1, h2, w2)):
+			#~ output[4] = randint(image_side_size - w2) - 1
+			#~ output[5] = randint(image_side_size - h2) - 1
+			#~ output[6] = randint(360) - 1
+			#~ output[7] = np.random.uniform(0.5,2,1)[0]
+
+	#~ if w3 != 0:
+		#~ output[8] = randint(image_side_size - w3) - 1
+		#~ output[9] = randint(image_side_size - h3) - 1
+		#~ output[10] = randint(360) - 1
+		#~ output[11] = np.random.uniform(0.5,2,1)[0]
+		#~ while (not correct_third_polygon(output, h1, w1, h2, w2, h3, w3)):
+			#~ output[8] = randint(image_side_size - w3) - 1
+			#~ output[9] = randint(image_side_size - h3) - 1
+			#~ output[10] = randint(360) - 1
+			#~ output[11] = np.random.uniform(0.5,2,1)[0]
+			#~ output[11] = 0.5
+
 	logger.write_to_log(my_name, "got random coords " + str(output))
 	
-	return np.asarray(output)
+	return output
 
 def check_if_correct(coords,h1,w1,h2,w2,h3,w3):
-	if (correct_second_polygon(coords[:6], h1, w1, h2, w2)
+	if (correct_second_polygon(coords[:8], h1, w1, h2, w2)
 		and correct_third_polygon(coords, h1, w1, h2, w2, h3, w3)):
 		return True
 	return False
 	
-def get_coordinates(name1, name2, name3):
-	x1,y1,w1,h1 = objects_dict[name1]
-	x2,y2,w2,h2 = objects_dict[name2]
-	x3,y3,w3,h3 = objects_dict[name3]
-	x = np.asarray([h1/w1, h2/w2, h3/w3])
+def get_coordinates(selected):
+	x1,y1,w1,h1 = objects_dict[selected[0]]
+	w2=h2=w3=h3 = 0
+	
+	x = [h1/w1]
+	if len(selected) > 1:
+		x2,y2,w2,h2 = objects_dict[selected[1]]
+		x.append(h2/w2)
+	else:
+		x.append(0)
+	if len(selected) > 2:
+		x3,y3,w3,h3 = objects_dict[selected[2]]
+		x.append(h3/w3)
+	else:
+		x.append(0)
+	
+	x = np.asarray(x)
 	global current_x_sequence
 	current_x_sequence = x
 	# normalisation
 #	x = scaler.transform(x)
 	x = x.reshape(1,-1)
-	predict = locate_model.predict_on_batch(x)
-	predict = predict[0]
-	logger.write_to_log(my_name, "predicted coords " + str(predict))
+	#~ predict = locate_model.predict_on_batch(x)
+	#~ predict = predict[0]
+	#~ logger.write_to_log(my_name, "predicted coords " + str(predict))
 	
-	if not check_if_correct(predict,h1,w1,h2,w2,h3,w3):
-		predict = generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3)
+#	if not check_if_correct(predict,h1,w1,h2,w2,h3,w3):
+	predict = generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3)
 #	predict = scaler.inverse_transform(predict)
 	global current_y_sequence
 	current_y_sequence = predict
@@ -212,9 +251,6 @@ while True:
 	logger.write_to_log(my_name, "received mes " + mes)
 	# simplenetteaching,h1/w1,h2/w2,h3/w3,x1,y1,a1,x2,y2,a2,x3,y3,a3
 	if mes.startswith('generatingnetteaching'):
-		#~ mes = mes.split(',')
-		#~ x = np.asarray(map(int, mes[1:4]))
-		#~ y = np.asarray(map(int, mes[4:]))
 		x = current_x_sequence
 		y = current_y_sequence
 		teaching(locate_model, x, y)
@@ -222,9 +258,13 @@ while True:
 		sending_sock.sendto(data, ('<broadcast>', port))
 
 	elif mes.startswith('generate'):
-		n1,n2,n3 = get_images_names()
-		x1,y1,a1,x2,y2,a2,x3,y3,a3 = get_coordinates(n1, n2, n3)
-		result_name = images_utils.draw_image(n1,n2,n3,image_side_size,objects_dict,'images/result2/', x1,y1,a1,x2,y2,a2,x3,y3,a3)
+		selected = get_images_names()
+		# TODO: if len(selected)=2 you should take it into account when you will teach
+		coords = get_coordinates(selected)
+		print
+		print 'selected coords ' + str(coords)
+		print
+		result_name = images_utils.draw_image(selected,image_side_size,objects_dict,'images/result5/', coords)
 		logger.write_to_log(my_name, "name of result image " + result_name)
 		data = 'imagegenerated,' + result_name
 		sending_sock.sendto(data, ('<broadcast>', port))

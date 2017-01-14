@@ -20,6 +20,10 @@ def edge_detect(file_name, tresh_min, tresh_max):
 	contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
 	cnt = contours[0]
 	x,y,w,h = cv2.boundingRect(cnt)
+	#~ cv2.rectangle(image, (x+1, y+1), (x+w-1, y+h-1), (0,255,0), 2)
+	#~ cv2.imwrite(file_name, image)
+	#~ cv2.imshow('lala', image)
+	#~ cv2.waitKey()
  #   cv2.rectangle(image,(x,y),(x+w,y+h),(255,0,0),3)
 	
 	return x,y,w,h
@@ -34,11 +38,10 @@ def find_objects_hw(directory):
 	return dimensions
 
 def putLogo(logo, canvas, x, y):
-	h,w,channels = logo.shape
-	print h, w
+	h, w = logo.shape[:2]
+	h, w = ceil_coords([h,w])
 	
-	logger.write_to_log("images_utils", "logo rect canvas " + str(x) + ":" + str(w+x) + ":"+ str(y) + ":"+ str(h+y) + ":")
-	#roi = canvas[x:w+x, y:h+y]
+	logger.write_to_log("images_utils", "logo rect canvas " + str(x) + ":" + str(w+x) + ":"+ str(y) + ":"+ str(h+y))
 	roi = canvas[y:h+y, x:w+x]
 	# Now create a mask of logo and create its inverse mask
 	logogray = cv2.cvtColor(logo,cv2.COLOR_BGR2GRAY)
@@ -51,7 +54,10 @@ def putLogo(logo, canvas, x, y):
 	logo_fg = cv2.bitwise_and(logo,logo,mask = mask)
 	dst = cv2.add(img1_bg,logo_fg)
 	canvas[y:h+y, x:w+x] = dst
-
+	#~ cv2.rectangle(canvas, (x, y), (x+w, y+h), (255,0,0), 2)
+	#~ cv2.imshow('putting_on_canvas', canvas)
+	#~ cv2.waitKey(0)
+	
 def create_blank(width, height, rgb_color=(255, 255, 255)):
 	logger.write_to_log("images_utils", "creating blank canvas " + str(height))
 	image = np.zeros((height, width, 3), np.uint8)
@@ -62,58 +68,63 @@ def create_blank(width, height, rgb_color=(255, 255, 255)):
 	
 	return image
 
-# TODO: what a fuck with ceil?!
-def draw_image(name1, name2, name3, result_size, objects_dict, images_folder, x1, y1, a1, x2, y2, a2, x3, y3, a3):
+def ceil_coords(coords):
+	for c in coords:
+		c = int(math.ceil(c))
+	coords = map(int, coords)
+	
+	return coords
+
+def cut_and_rotate_roi(im_name, angle, s):
+	im = cv2.imread(im_name)
+	# scale
+	print str(int(math.ceil(128*s)))
+	im = cv2.resize(im, (int(math.ceil(128*s)), int(math.ceil(128*s))))
+	temp_name = os.path.splitext(im_name)[0] + '_temp.jpg'
+	cv2.imwrite(temp_name, im)
+	
+	# coords of roi
+	x,y,w,h = edge_detect(temp_name, 128,255)
+	os.remove(temp_name)
+	im_roi = im[y:y+h,x:x+w]
+	# relative to the center
+	im_roi_rotated = ndimage.rotate(im_roi, angle, cval=255)
+	h, w = im_roi_rotated.shape[:2]
+	h, w = ceil_coords([h,w])
+	
+	return h,w,im_roi_rotated
+
+def draw_image(selected, result_size, objects_dict, images_folder, coords):
 	h1=w1=h2=w2=h3=w3=0
-	x1=int(math.ceil(x1))
-	y1=int(math.ceil(y1))
-	x2=int(math.ceil(x2))
-	y2=int(math.ceil(y2))
-	x3=int(math.ceil(x3))
-	y3=int(math.ceil(y3))
-	img1 = cv2.imread(name1)
-	x_roi_1,y_roi_1,w_roi_1,h_roi_1 = objects_dict[name1].astype('int')
-	# cut roi from image and then rotate roi and put on canvas
-	# img[y: y + h, x: x + w]
-	img1_roi = img1[y_roi_1:y_roi_1+h_roi_1, x_roi_1:x_roi_1+w_roi_1]
-	img1_roi_rotated = ndimage.rotate(img1_roi, a1, cval=255)
-	h1, w1 = img1_roi_rotated.shape[:2]
-	h1=int(math.ceil(h1))
-	w1=int(math.ceil(w1))
-	if name2 != None:
-		img2 = cv2.imread(name2)
-		x_roi_2,y_roi_2,w_roi_2,h_roi_2 = objects_dict[name2].astype('int')
-		img2_roi = img2[y_roi_2:y_roi_2+h_roi_2, x_roi_2:x_roi_2+w_roi_2]
-		img2_roi_rotated = ndimage.rotate(img2_roi, a2, cval=255)
-		h2, w2 = img2_roi_rotated.shape[:2]
-		h2=int(math.ceil(h2))
-		w2=int(math.ceil(w2))
-	if name3 != None:
-		img3 = cv2.imread(name3)
-		x_roi_3,y_roi_3,w_roi_3,h_roi_3 = objects_dict[name3].astype('int')
-		img3_roi = img3[y_roi_3:y_roi_3+h_roi_3, x_roi_3:x_roi_3+w_roi_3]
-		img3_roi_rotated = ndimage.rotate(img3_roi, a3, cval=255)
-		h3, w3 = img3_roi_rotated.shape[:2]
-		h3=int(math.ceil(h3))
-		w3=int(math.ceil(w3))
+	x1, y1, a1, s1, x2, y2, a2, s2, x3, y3, a3, s3 = coords
+	
+	x1, y1, x2, y2, x3, y3 = ceil_coords([x1, y1, x2, y2, x3, y3])
+	print 'points for drawing ' + str([x1, y1, x2, y2, x3, y3])
+
+	h1,w1,roi1 = cut_and_rotate_roi(selected[0], a1, s1)
+	
+	if len(selected) > 1:
+		h2,w2,roi2 = cut_and_rotate_roi(selected[1], a2, s2)
+		
+	if len(selected) > 2:
+		h3,w3,roi3 = cut_and_rotate_roi(selected[2], a3, s3)
 
 	res_size = max(h1+y1,w1+x1,h2+y2,w2+x2,h3+y3,w3+x3)	
-	
 	canvas = create_blank(res_size, res_size)
-	print res_size
-	print h1,w1,h2,w2,h3,w3
-	logger.write_to_log("images_utils", "roi sizes of images " + str(h1) + " " + str(w1) + " "+ str(h2) + " " + str(w2) + " "+ str(h3) + " "+ str(w3))
-	logger.write_to_log("images_utils", "roi coords of images " + str(y1) + " " + str(x1) + " "+ str(y2) + " " + str(x2) + " "+ str(y3) + " "+ str(x3))
-	putLogo(img1_roi_rotated, canvas, x1, y1)
-	if name2 != None:
-		putLogo(img2_roi_rotated, canvas, x2, y2)
-	if name3 != None:
-		putLogo(img3_roi_rotated, canvas, x3, y3)
+		
+	putLogo(roi1, canvas, x1, y1)
 	
-	name1_clear = os.path.splitext(os.path.basename(name1))[0].translate(None, digits)
-	name2_clear = os.path.splitext(os.path.basename(name2))[0].translate(None, digits)
-	name3_clear = os.path.splitext(os.path.basename(name3))[0].translate(None, digits)
+	name1_clear = os.path.splitext(os.path.basename(selected[0]))[0].translate(None, digits)
+	name2_clear = name3_clear = ''
+	if len(selected) > 1:
+		putLogo(roi2, canvas, x2, y2)
+		name2_clear = os.path.splitext(os.path.basename(selected[1]))[0].translate(None, digits)
+	if len(selected) > 2:
+		putLogo(roi3, canvas, x3, y3)
+		name3_clear = os.path.splitext(os.path.basename(selected[2]))[0].translate(None, digits)
+	
 	result_name = images_folder + name1_clear + '_' + name2_clear + '_' + name3_clear + '.jpg'
+	
 	canvas = cv2.resize(canvas, (result_size, result_size))
 	
 	if not os.path.exists(images_folder):
