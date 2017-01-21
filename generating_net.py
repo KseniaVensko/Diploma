@@ -288,7 +288,8 @@ def get_coordinates(selected):
 # TODO: why not working the line below
 #if __name__ == 'main':
 locate_model, selecting_model, objects_dict = initialize_models()
-listening_sock, sending_sock = socket_utils.initialize_sockets(port)
+#listening_sock, sending_sock = socket_utils.initialize_sockets(port)
+s = socket_utils.initialize_client_socket(port)
 print 'initialization complete'
 
 teach_command = 'generatingnetteaching'
@@ -296,8 +297,10 @@ teach_success = 'generatingnetsuccess'
 generate_command = 'generate'
 generate_sucess = 'imagegenerated'
 
+s.sendto("generate", ('<broadcast>', port))
 while True:
-	mes = listening_sock.recv(1024)
+	mes, addr = s.recvfrom(1024)
+#	mes = listening_sock.recv(1024)
 	
 	logger.write_to_log(log_file,my_name, "received mes " + mes)
 	if mes.startswith(teach_command):
@@ -312,7 +315,8 @@ while True:
 			names = current_name_sequence
 			input_names = current_name_input_sequence
 			locate_model, selecting_model = teaching(locate_model, selecting_model, x, y, input_names, names)
-		sending_sock.sendto(teach_success, ('<broadcast>', port))
+		s.sendto(teach_success, addr)
+		#sending_sock.sendto(teach_success, ('<broadcast>', port))
 
 	elif mes.startswith(generate_command):
 		selected = get_images_names()
@@ -325,4 +329,5 @@ while True:
 		
 		logger.write_to_log(log_file,my_name, "name of result image " + result_name)
 		data = generate_sucess + ',' + result_name
-		sending_sock.sendto(data, ('<broadcast>', port))
+		#sending_sock.sendto(data, ('<broadcast>', port))
+		s.sendto(data, addr)
