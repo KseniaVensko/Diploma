@@ -50,10 +50,12 @@ generate_addr, recognize_addr = accept_connections()
 for i in range(4):
 	mes = send_command_new(generate_command, generate_addr)
 	if mes.startswith(generate_success):
-		mes = mes.split(',')
-		print mes[1]
-		name = mes[1]
-		
+		#~ mes = mes.split(',')
+		#~ print mes[1]
+		#~ name = mes[1]
+		s.sendto('waiting', generate_addr)
+		name = socket_utils.receive_image(s)
+		print name
 		logger.write_to_log(log_file,my_name, "received generated image name " + name)
 	else:
 		print 'after generate another mes ' + mes
