@@ -6,6 +6,7 @@ import numpy as np
 import logger
 import math
 
+log_file = 'loggers/images_utils_logger.txt'
 # finds an object on a white background and returns coordinates of bounding rectangle
 def edge_detect(file_name, tresh_min, tresh_max):
 	image = cv2.imread(file_name)
@@ -41,7 +42,7 @@ def putLogo(logo, canvas, x, y):
 	h, w = logo.shape[:2]
 	h, w = ceil_coords([h,w])
 	
-	logger.write_to_log("images_utils", "logo rect canvas " + str(x) + ":" + str(w+x) + ":"+ str(y) + ":"+ str(h+y))
+	logger.write_to_log(log_file,"images_utils", "logo rect canvas " + str(x) + ":" + str(w+x) + ":"+ str(y) + ":"+ str(h+y))
 	roi = canvas[y:h+y, x:w+x]
 	# Now create a mask of logo and create its inverse mask
 	logogray = cv2.cvtColor(logo,cv2.COLOR_BGR2GRAY)
@@ -59,7 +60,7 @@ def putLogo(logo, canvas, x, y):
 	#~ cv2.waitKey(0)
 	
 def create_blank(width, height, rgb_color=(255, 255, 255)):
-	logger.write_to_log("images_utils", "creating blank canvas " + str(height))
+	logger.write_to_log(log_file,"images_utils", "creating blank canvas " + str(height))
 	image = np.zeros((height, width, 3), np.uint8)
 	# Since OpenCV uses BGR, convert the color first
 	color = tuple(reversed(rgb_color))
@@ -97,7 +98,7 @@ def cut_and_rotate_roi(im_name, angle, s):
 def draw_image(selected, result_size, objects_dict, images_folder, coords):
 	h1=w1=h2=w2=h3=w3=0
 	x1, y1, a1, s1, x2, y2, a2, s2, x3, y3, a3, s3 = coords
-	
+	# TODO: this is coorinates of turned and scaled polygon, but I use them as they are only scaled
 	x1, y1, x2, y2, x3, y3 = ceil_coords([x1, y1, x2, y2, x3, y3])
 	print 'points for drawing ' + str([x1, y1, x2, y2, x3, y3])
 

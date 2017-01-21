@@ -4,6 +4,7 @@ from shapely import affinity
 import math
 import logger
 
+log_file = 'loggers/polygon_logger.txt'
 my_name = 'polygon_actions'
 randint = np.random.random_integers
 
@@ -12,6 +13,20 @@ def check_coords_above_zero(points):
 		if p[0] < 0 or p[1] < 0:
 			return False
 	return True
+
+def generate_polygon_from_points(h,w,coords):
+	x,y,a,s = coords
+	if s < 0.5:
+		return False, None
+	if a > 360:
+		return False, None
+	points = find_all_points_from_left(x, y, h, w)
+	points_scaled = scale_polygon(points, s)
+	points_rotated = rotate_polygon(points_scaled, a)
+	if not check_coords_above_zero(points_rotated):
+		return False, None
+	else:
+		return True, points_rotated
 
 def generate_polygon(w,h, image_side_size, is_first=False):
 	check = False
@@ -35,7 +50,7 @@ def generate_polygon(w,h, image_side_size, is_first=False):
 def correct_second_polygon(points1_rotated, points2_rotated):
 	int_ = two_polygons_intersection(points1_rotated, points2_rotated)
 	if polygon_area(points1_rotated)/2 > int_.area:
-		logger.write_to_log(my_name, "second_polygon 1/2area" + str(polygon_area(points1_rotated)/2 ) + ' int_area ' + str(int_.area))
+		logger.write_to_log(log_file,my_name, "second_polygon 1/2area" + str(polygon_area(points1_rotated)/2 ) + ' int_area ' + str(int_.area))
 		return True
 	print 'fail 2'
 	return False
@@ -55,7 +70,7 @@ def correct_third_polygon(points1_rotated, points2_rotated, points3_rotated):
 	
 	if polygon_area(points1_rotated)/2 > area1:
 		if polygon_area(points2_rotated)/2 > int_23.area:
-			logger.write_to_log(my_name, "third_polygon 1/2area2" + str(polygon_area(points2_rotated)/2 ) + ' int23_area ' + str(int_23.area))
+			logger.write_to_log(log_file,my_name, "third_polygon 1/2area2" + str(polygon_area(points2_rotated)/2 ) + ' int23_area ' + str(int_23.area))
 			print 'im returning true because im thinking that ' + 'area1 ' + str(polygon_area(points1_rotated)/2) + 'is bigger than ' + str(area1)
 			print
 			return True
