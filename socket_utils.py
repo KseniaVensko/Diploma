@@ -17,7 +17,7 @@ def initialize_client_socket(port):
 	
 	return s
 
-def send_image(file_name, addr):
+def send_image(file_name, addr, s):
 	# send name
 	s.sendto(file_name, addr)
 	with open(file_name, 'rb') as f:
@@ -25,7 +25,7 @@ def send_image(file_name, addr):
 	# send binary str
 	s.sendto(data, addr)
 
-def receive_image():
+def receive_image(s):
 	# receive name
 	name,addr = s.recvfrom(1024)
 
