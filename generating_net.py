@@ -329,5 +329,10 @@ while True:
 		
 		logger.write_to_log(log_file,my_name, "name of result image " + result_name)
 		data = generate_sucess + ',' + result_name
-		#sending_sock.sendto(data, ('<broadcast>', port))
 		s.sendto(data, addr)
+		mes,addr = s.recvfrom(1024)
+		if 'waiting' in mes:
+			socket_utils.send_image(result_name, addr, s)
+			
+		#sending_sock.sendto(data, ('<broadcast>', port))
+		
