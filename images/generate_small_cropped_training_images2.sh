@@ -8,7 +8,7 @@
 out_dir=$2
 let i=$3
 let count=$4
-temp_dir='temp2/'
+temp_dir='temp/'
 declare -A AREAMAP=( [bear.jpg]='0.4' [crocodile.jpg]='0.3' [dog.jpg]='0.3' [horse2.jpg]='0.5' [kangoro.jpg]='0.5' [rabbit.jpg]='0.45' [sheep.jpg]='0.45' [walrus.jpg]='0.5' )
 declare -A LEMAP=( [bear.jpg]='0.3' [crocodile.jpg]='0' [dog.jpg]='0.3' [horse2.jpg]='0' [kangoro.jpg]='0.3' [rabbit.jpg]='0.2' [sheep.jpg]='0.1' [walrus.jpg]='0.25' )
 declare -A RIMAP=( [bear.jpg]='0' [crocodile.jpg]='0.1' [dog.jpg]='0.15' [horse2.jpg]='0.1' [kangoro.jpg]='0' [rabbit.jpg]='0.1' [sheep.jpg]='0.2' [walrus.jpg]='0.1' )
@@ -25,10 +25,10 @@ do
  #~ then
   #~ continue
  #~ fi
- #~ if [[ $f != *"bear"* ]]
- #~ then
-  #~ continue
- #~ fi
+ if [[ $f == *"walrus"* ]]
+  then
+   continue
+ fi
  echo generate_train_croped_images2.py --name "$1$f" --l ${LEMAP[$f]} --r ${RIMAP[$f]} --u ${UPMAP[$f]} --b ${BOMAP[$f]} --area ${AREAMAP[$f]} --start $i --count "$count" --out_dir $temp_dir
  python generate_train_croped_images2.py --name "$1$f" --l ${LEMAP[$f]} --r ${RIMAP[$f]} --u ${UPMAP[$f]} --b ${BOMAP[$f]} --area ${AREAMAP[$f]} --start $i --count "$count" --out_dir $temp_dir
  ((i+=count))
