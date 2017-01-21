@@ -71,7 +71,7 @@ for i in range(4):
 		elif set(objects) != set(mes[1]):
 			logger.write_to_log(log_file,my_name, "correct objects " + str(objects) + "are not equal recognized objects " + str(mes[1]))
 			mes = send_command_new(generate_teach_command + ',' + str(True), generate_addr)
-                        mes = send_command_new(recognize_teach_command + ',' + name + ',' + ','.join(objects))
+                        mes = send_command_new(recognize_teach_command + ',' + name + ',' + ','.join(objects), recognize_addr)
 			print "prediction was not correct"
 		else:
 			mes = send_command_new(generate_teach_command + ',' + str(False), generate_addr)
