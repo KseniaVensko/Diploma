@@ -105,7 +105,7 @@ def teaching(path, objects):
 	for i in objects:
 		y[dict[i]] = 1
 	y = y.reshape((1,-1))
-	print 'training'
+	print 'training ' + str(objects)
 	model.train_on_batch(im,y)
 	
 	logger.write_to_log(log_file,my_name, "train " + str(y))
@@ -117,15 +117,21 @@ while True:
 	logger.write_to_log(log_file,my_name, "received mes " + mes)
 	
 	if mes.startswith(teach_command):
+		print "received teaching command"
 		mes = mes.split(',')
 		path = mes[1]
 		teaching(path, mes[2:])
 		#sending_sock.sendto(teach_success, ('<broadcast>', port))
+		print "sending teaching success"
 		s.sendto(teach_success, addr)
 
 	elif mes.startswith(recognize_command):
-		mes = mes.split(',')
-		path = mes[1]
+		print "received recognize command"
+		#~ mes = mes.split(',')
+		#~ path = mes[1]
+		s.sendto('waiting', addr)
+		path = socket_utils.receive_image(s)
+		print path
 		im = preprocess_im(path)
 		predict = model.predict_proba(im)
 		
@@ -133,6 +139,7 @@ while True:
 		seen_objects = decode_predict_proba(predict)
 		
 		logger.write_to_log(log_file,my_name, "seen objects " + str(seen_objects))
+		print "sending recognize success"
 		data = recognize_sucess + ':' + str(seen_objects)
 		#sending_sock.sendto(data, ('<broadcast>', port))
 		s.sendto(data, addr)
