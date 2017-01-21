@@ -18,7 +18,6 @@ options = parser.parse_args()
 port = vars(options)['port']
 my_name = "agent"
 log_file = 'loggers/agent_logger.txt'
-<<<<<<< HEAD
 #listening_sock, sending_sock = socket_utils.initialize_sockets(port)
 s = socket_utils.initialize_server_socket(port)
 
