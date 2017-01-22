@@ -17,6 +17,21 @@ def initialize_client_socket(port):
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	
 	return s
+	
+def initialize_server_socket_tcp(port):
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	s.bind(('', port))
+	
+	return s
+	
+def initialize_client_socket_tcp(port):
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	
+	return s
 
 def send_image(file_name, addr, s):
 	# send name
