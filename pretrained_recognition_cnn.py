@@ -22,7 +22,6 @@ parser.add_argument("--model", type=str, default="pretrained_vgg16.h5")
 parser.add_argument("--port", type=int, default=7777)
 options = parser.parse_args()
 global port
-#global listening_sock, sending_sock
 global s
 global model
 # keys is array of objects i.e [bear,crocodile,...]
@@ -34,8 +33,6 @@ def initialize():
 	port = vars(options)['port']
 	
 	logger.write_to_log(log_file,my_name, "load sockets and model")
-	#~ global listening_sock, sending_sock
-	#~ listening_sock, sending_sock = socket_utils.initialize_sockets(port)
 	global s
 	s = socket_utils.initialize_client_socket(port)
 	s.sendto("recognize", ('<broadcast>', port))
@@ -111,7 +108,6 @@ def teaching(path, objects):
 	logger.write_to_log(log_file,my_name, "train " + str(y))
 
 while True:
-	#mes = listening_sock.recv(1024)
 	mes, addr = s.recvfrom(1024)
 	
 	logger.write_to_log(log_file,my_name, "received mes " + mes)
@@ -121,7 +117,6 @@ while True:
 		mes = mes.split(',')
 		path = mes[1]
 		teaching(path, mes[2:])
-		#sending_sock.sendto(teach_success, ('<broadcast>', port))
 		print "sending teaching success"
 		s.sendto(teach_success, addr)
 
@@ -141,6 +136,5 @@ while True:
 		logger.write_to_log(log_file,my_name, "seen objects " + str(seen_objects))
 		print "sending recognize success"
 		data = recognize_sucess + ':' + str(seen_objects)
-		#sending_sock.sendto(data, ('<broadcast>', port))
 		s.sendto(data, addr)
 
