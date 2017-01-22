@@ -297,13 +297,14 @@ teach_success = 'generatingnetsuccess'
 generate_command = 'generate'
 generate_sucess = 'imagegenerated'
 
-s.sendto("generate", ('<broadcast>', port))
+s.sendto("generate_net", ('<broadcast>', port))
 while True:
 	mes, addr = s.recvfrom(1024)
 #	mes = listening_sock.recv(1024)
 	
 	logger.write_to_log(log_file,my_name, "received mes " + mes)
 	if mes.startswith(teach_command):
+		print 'received teaching command'
 		success = mes.split(',')[1]
 		if success == 'False':
 			# TODO: decrease object_coefs
@@ -315,6 +316,8 @@ while True:
 			names = current_name_sequence
 			input_names = current_name_input_sequence
 			locate_model, selecting_model = teaching(locate_model, selecting_model, x, y, input_names, names)
+		
+		print "sending teaching success"
 		s.sendto(teach_success, addr)
 		#sending_sock.sendto(teach_success, ('<broadcast>', port))
 
@@ -328,10 +331,12 @@ while True:
 		result_name = images_utils.draw_image(selected,image_side_size,objects_dict,result_dir, coords)
 		
 		logger.write_to_log(log_file,my_name, "name of result image " + result_name)
+		print "sending generate success"
 		data = generate_sucess + ',' + result_name
 		s.sendto(data, addr)
 		mes,addr = s.recvfrom(1024)
 		if 'waiting' in mes:
+			print "sending image "
 			socket_utils.send_image(result_name, addr, s)
 			
 		#sending_sock.sendto(data, ('<broadcast>', port))
