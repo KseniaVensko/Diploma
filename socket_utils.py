@@ -1,4 +1,5 @@
 import socket
+import os
 
 buf = 128*128*3
 
@@ -28,6 +29,9 @@ def send_image(file_name, addr, s):
 def receive_image(s):
 	# receive name
 	name,addr = s.recvfrom(1024)
+	folder, file_name = os.path.split(name)
+	if not os.path.exists(folder):
+		os.makedirs(folder)
 
 	data,addr = s.recvfrom(buf)
 	with open(name.strip(), 'wb') as f:
