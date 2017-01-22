@@ -35,7 +35,7 @@ def initialize():
 	logger.write_to_log(log_file,my_name, "load sockets and model")
 	global s
 	s = socket_utils.initialize_client_socket(port)
-	s.sendto("recognize", ('<broadcast>', port))
+	s.sendto("recognize_net", ('<broadcast>', port))
 	global model
 	# will also take care of compiling the model using the saved training configuration
 	model = load_model(model_file)
@@ -55,8 +55,10 @@ def initialize():
 def decode_predict_proba(predict):
 	# predict is like [[ 0.2, 0.99, ...]]
 	predict = predict[0]
+	print "prediction probabilities are " + str(predict)
 	summ = sum(predict)
 	percentage_predict = [x / summ for x in predict]
+	print "percentage predict is " + str(percentage_predict)
 	# get indices of objects, that have the probability higher, than coef
 	# and get maximum values
 	ob = [ (n,i) for n,i in enumerate(percentage_predict) if i>coef ]
@@ -134,7 +136,7 @@ while True:
 		seen_objects = decode_predict_proba(predict)
 		
 		logger.write_to_log(log_file,my_name, "seen objects " + str(seen_objects))
-		print "sending recognize success"
+		print "sending recognize success with objects " + str(seen_objects)
 		data = recognize_sucess + ':' + str(seen_objects)
 		s.sendto(data, addr)
 
