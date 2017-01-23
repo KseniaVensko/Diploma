@@ -35,7 +35,7 @@ def initialize():
 	logger.write_to_log(log_file,my_name, "load sockets and model")
 	global s
 	s = socket_utils.initialize_client_socket(port)
-	s.sendto("recognize_net", ('<broadcast>', port))
+	send_mes("recognize_net", ('<broadcast>', port))
 	global model
 	# will also take care of compiling the model using the saved training configuration
 	model = load_model(model_file)
@@ -88,6 +88,14 @@ def preprocess_im(image_path):
 	
 	return image
 
+def send_mes(data, addr):
+	s.sendto(data, addr)
+
+def receive_mes():
+	mes, addr = s.recvfrom(1024)
+	
+	return mes,addr
+
 initialize()
 
 teach_command = 'objectteaching'
@@ -110,7 +118,7 @@ def teaching(path, objects):
 	logger.write_to_log(log_file,my_name, "train " + str(y))
 
 while True:
-	mes, addr = s.recvfrom(1024)
+	mes, addr = receive_mes()
 	
 	logger.write_to_log(log_file,my_name, "received mes " + mes)
 	
@@ -120,13 +128,13 @@ while True:
 		path = mes[1]
 		teaching(path, mes[2:])
 		print "sending teaching success"
-		s.sendto(teach_success, addr)
+		send_mes(teach_success, addr)
 
 	elif mes.startswith(recognize_command):
 		print "received recognize command"
 		#~ mes = mes.split(',')
 		#~ path = mes[1]
-		s.sendto('waiting', addr)
+		send_mes('waiting', addr)
 		path = socket_utils.receive_image(s)
 		print path
 		im = preprocess_im(path)
@@ -138,5 +146,12 @@ while True:
 		logger.write_to_log(log_file,my_name, "seen objects " + str(seen_objects))
 		print "sending recognize success with objects " + str(seen_objects)
 		data = recognize_sucess + ':' + str(seen_objects)
-		s.sendto(data, addr)
+		send_mes(data,addr)
+		
+	elif mes.startswith('save_recognize_model'):
+		mes = mes.split(',')
+		path = mes[1]
+		print "saving model to " + path
+		model.save(path)
+		send_mes(recognize_sucess, addr)
 
