@@ -45,11 +45,13 @@ keys = []
 parser = argparse.ArgumentParser()
 parser.add_argument("--dir", type=str, default="images/big_without_walrus/")
 parser.add_argument("--result_dir", type=str, default="images/result_dir/")
+parser.add_argument("--object_coefs", type=str, default="")
 parser.add_argument("--port", type=int, default=7777)
 options = parser.parse_args()
 
 images_folder = vars(options)['dir']
 result_dir = vars(options)['result_dir']
+object_coefs_file = vars(options)['object_coefs']
 port = vars(options)['port']
 
 def my_init(shape, name=None):
@@ -65,7 +67,6 @@ def resize_images_to_standard_size(paths):
 		im.close()
 
 def initialize_models():
-	
 	logger.write_to_log(log_file,my_name, "initialize objects_dict")
 	global keys
 	keys = [images_folder + f for f in sorted(os.listdir(images_folder)) if f.endswith('.jpg')]
@@ -82,8 +83,17 @@ def initialize_models():
 	logger.write_to_log(log_file,my_name, "initialization of objects_dict complete")
 	
 	objects_count = len(keys)
-	global object_coefs
-	object_coefs = randint(100, size=objects_count)
+	if object_coefs_file:
+		global object_coefs
+		# TODO: catch FileNotFound exception
+		object_coefs = np.loadtxt(object_coefs_file, dtype='float', delimiter = ' ')
+		if len(object_coefs) != objects_count:
+			print "objects coef count are too big or too small. Using random coefs"
+			global object_coefs
+			object_coefs = randint(100, size=objects_count)
+	else:
+		global object_coefs
+		object_coefs = randint(100, size=objects_count)
 	
 	logger.write_to_log(log_file,my_name, "starting object_coefs " + str(object_coefs))
 	
@@ -113,7 +123,6 @@ def initialize_models():
 	return locate_model, selecting_model, objects_dict
 
 def teaching(locate_model, selecting_model, x, y, input_names, names):
-	
 	logger.write_to_log(log_file,my_name, 'teaching locate_model ' + str(x) + ' ' + str(y))
 	logger.write_to_log(log_file,my_name, 'teaching selecting_model ' + str(input_names) + ' ' + str(names))
 	x = x.reshape((1,-1))
@@ -285,6 +294,21 @@ def get_coordinates(selected):
 	logger.write_to_log(log_file,my_name, "current y sequence " + str(current_y_sequence))
 	return predict
 
+def change_object_coefs(corrective):
+	k = 0
+	k = 1 if corrective else -1
+	global object_coefs
+	print "coef before changing " + str(object_coefs)
+	for i in range(len(object_coefs)):
+		summ = object_coefs[i] + k*atom
+		if summ > 100:
+			summ = 100
+		if summ < 0:
+			summ = 0
+		object_coefs[i] = summ
+	print "after " + str(object_coefs)
+	logger.write_to_log(log_file,my_name, "coefs was changed to " + str(object_coefs))
+
 # TODO: why not working the line below
 #if __name__ == 'main':
 locate_model, selecting_model, objects_dict = initialize_models()
@@ -306,11 +330,11 @@ while True:
 	if mes.startswith(teach_command):
 		print 'received teaching command'
 		success = mes.split(',')[1]
+		# decreasing or encreasing
+		change_object_coefs(success)
 		if success == 'False':
-			# TODO: decrease object_coefs
 			print 'not success'
 		else:
-			# TODO: encrease object_coefs
 			x = current_x_sequence
 			y = current_y_sequence
 			names = current_name_sequence
@@ -338,6 +362,17 @@ while True:
 		if 'waiting' in mes:
 			print "sending image "
 			socket_utils.send_image(result_name, addr, s)
+			
+	elif mes.startswith('save_generate_model'):
+		mes = mes.split(',')
+		path = mes[1]
+		print "saving model to " + path
+		model.save(path)
+		coefs_path = os.path.splitext(path)[0] + "_object_coefs.txt"
+		print "saving object coefs to " + coefs_path
+		np.savetxt(coefs_path, object_coefs, fmt='%u', delimiter=' ')
+		
+		send_mes(recognize_sucess, addr)
 			
 		#sending_sock.sendto(data, ('<broadcast>', port))
 		
