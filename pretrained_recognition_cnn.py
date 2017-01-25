@@ -12,7 +12,7 @@ theano.config.openmp = True
 
 my_name = "pretrained_recognition"
 log_file = 'loggers/recognition_logger.txt'
-coef = 0.3
+coef = 0.5
 objects_count = 3
 objects = {}
 img_width, img_height = 128, 128
@@ -55,7 +55,7 @@ def initialize():
 def decode_predict_proba(predict):
 	# predict is like [[ 0.2, 0.99, ...]]
 	predict = predict[0]
-	print "prediction probabilities are " + str(predict)
+	print "predict is " + str(predict)
 	summ = sum(predict)
 	percentage_predict = [x / summ for x in predict]
 	print "percentage predict is " + str(percentage_predict)
@@ -113,7 +113,9 @@ def teaching(path, objects):
 		y[dict[i]] = 1
 	y = y.reshape((1,-1))
 	print 'training ' + str(objects)
-	model.train_on_batch(im,y)
+	loss = model.train_on_batch(im,y)
+	print model.metrics_names
+	print loss
 	
 	logger.write_to_log(log_file,my_name, "train " + str(y))
 

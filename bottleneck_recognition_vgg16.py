@@ -71,7 +71,7 @@ for k in range(f.attrs['nb_layers']):
 	weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
 	model.layers[k].set_weights(weights)
 f.close()
-train_data = np.load(open('bottleneck_features_train.npy'))
+train_data = np.load(open('bottleneck_features_train2.npy'))
 top_model = Sequential()
 top_model.add(Flatten(input_shape=train_data.shape[1:]))
 top_model.add(Dense(256, activation='relu'))
@@ -82,12 +82,15 @@ top_model.load_weights(top_model_weights_path)
 
 # add the model on top of the convolutional base
 model.add(top_model)
-
-model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-model.save('pretrained_vgg16.h5')
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+#model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+model.save('pretrained_vgg16_2.h5')
 del model
-model = load_model('pretrained_vgg16.h5')
-for p in sorted(os.listdir('images/test_without_walrus/')):
-	im = preprocess_im('images/test_without_walrus/' + p)
-	predict = model.predict_classes(im)
-	print "for " + p + " prediction is " + str(predict)
+model = load_model('pretrained_vgg16_2.h5')
+for p in sorted(os.listdir('images/without_walrus/')):
+	im = preprocess_im('images/without_walrus/' + p)
+	predict = model.predict_proba(im)
+	predict = predict[0]
+	summ = sum(predict)
+	percentage_predict = [x / summ for x in predict]
+	print "for " + p + " prediction is " + str(percentage_predict)
