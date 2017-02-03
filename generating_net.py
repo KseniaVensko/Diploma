@@ -19,6 +19,10 @@ theano.config.openmp = True
 randint = np.random.random_integers
 log_file = 'loggers/generating_net_logger.txt'
 my_name="generating_net"
+
+# for selecting_net
+collage_images_count = 2
+coords_per_object = 4 # x y a s
 # for locate_net teaching
 current_y_sequence = []
 current_x_sequence = []
@@ -31,7 +35,7 @@ atom = 10
 # for choosing names in prediction of selecting_net
 threshold = 0.8
 
-image_side_size = 128
+image_side_size = 512
 # will be used for sequence preprocessing
 max_dimension = 1
 scaler = MinMaxScaler(feature_range=(0,1))
@@ -108,14 +112,13 @@ def initialize_models():
 	# divide h/w
 	b = np.divide(objects_dimensions[:,3],objects_dimensions[:,2])
 	b = b.reshape(-1,1)
-	scaler.fit(b)
-	epoch_size = 64*4
+#	scaler.fit(b)
 	inputs = 3
 	locate_model = Sequential()
 	# input: h1/w1 h2/w2 h3/w3
-	locate_model.add(Dense(12, init=my_init, input_dim=inputs, activation='relu'))
+	locate_model.add(Dense(12, init=my_init, input_dim=collage_images_count, activation='relu'))
 	locate_model.add(Dense(12, init=my_init, activation='relu'))
-	locate_model.add(Dense(12, init=my_init, activation='relu'))
+	locate_model.add(Dense(collage_images_count * coords_per_object, init=my_init, activation='relu'))
 	# output: x1 y1 a1 s1 x2 y2 a2 s2 x3 y3 a3 s3
 	locate_model.compile(optimizer='adam', loss='mse')
 	
@@ -143,8 +146,7 @@ def decode_select_predict(predict):
 	# and get maximum values
 	ob = [ (n,i) for n,i in enumerate(predict) if i>threshold ]
 	ob.sort(key=lambda x: x[1])
-	objects_count = 3
-	ob = ob[-objects_count:]
+	ob = ob[-collage_images_count:]
 	selected_objects = []
 	selected_coef = []
 	for i,n in ob:
@@ -154,23 +156,37 @@ def decode_select_predict(predict):
 	return selected_objects, selected_coef
 
 def get_random_images_names():
+	selected = []
+	coefs = []
+	
 	i1 = randint(len(keys)) - 1
 	im1 = keys[i1]
+	
+	selected.append(im1)
+	coefs.append(i1)
+	
 	# TODO: I removed check_image_shape because it doesnot matter, test it
 	i2 = randint(len(keys)) - 1
 	im2 = keys[i2]
 	while im1.translate(None, digits) == im2.translate(None, digits):
 		i2 = randint(len(keys)) - 1
 		im2 = keys[i2]
-	i3 = randint(len(keys)) - 1
-	im3 = keys[i3]
-	while im1.translate(None, digits) == im3.translate(None, digits) or im2.translate(None, digits) == im3.translate(None, digits):
+	
+	selected.append(im2)
+	coefs.append(i2)
+	
+	if (collage_images_count > 2):
 		i3 = randint(len(keys)) - 1
 		im3 = keys[i3]
+		while im1.translate(None, digits) == im3.translate(None, digits) or im2.translate(None, digits) == im3.translate(None, digits):
+			i3 = randint(len(keys)) - 1
+			im3 = keys[i3]
+			
+		selected.append(im3)
+		coefs.append(i3)
+		
+	logger.write_to_log(log_file,my_name, "got random images names " + str(selected))
 	
-	logger.write_to_log(log_file,my_name, "got random images names " + im1 + ", " + im2 + ", " + im3)
-	selected = [im1,im2,im3]
-	coefs = [i1,i2,i3]
 	return selected, coefs
 	
 def get_images_names():
@@ -262,13 +278,13 @@ def get_coordinates(selected):
 	if len(selected) > 1:
 		x2,y2,w2,h2 = objects_dict[selected[1]]
 		x.append(h2/w2)
-	else:
-		x.append(0)
+	#~ else:
+		#~ x.append(0)
 	if len(selected) > 2:
 		x3,y3,w3,h3 = objects_dict[selected[2]]
 		x.append(h3/w3)
-	else:
-		x.append(0)
+	#~ else:
+		#~ x.append(0)
 	
 	logger.write_to_log(log_file,my_name, "current x sequence " + str(x))
 	x = np.asarray(x)

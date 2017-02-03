@@ -141,7 +141,7 @@ def draw_image(selected, result_size, objects_dict, images_folder, coords):
 			putLogo(roi3, canvas, x3, y3)
 			name3_clear = os.path.splitext(os.path.basename(selected[2]))[0].translate(None, digits)
 	
-	result_name = images_folder + name1_clear + '_' + name2_clear + '_' + name3_clear + '.jpg'
+	result_name = images_folder + '_'.join([name1_clear, name2_clear, name3_clear]) + '.jpg'
 	
 	canvas = cv2.resize(canvas, (result_size, result_size))
 	
