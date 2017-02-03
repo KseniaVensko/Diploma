@@ -10,9 +10,9 @@ import theano
 
 image_side_size = 128
 images_folder = 'images/cube_128_images/'
-result_dir = 'images/hybrid/'
+result_dir = 'images/two_objects/'
 keys = [images_folder + f for f in sorted(os.listdir(images_folder)) if f.endswith('.jpg')]
-objects_dimensions = images_utils.find_objects_hw(images_folder)
+objects_dimensions = images_utils.find_objects_hw(keys)
 print keys
 objects_dict = dict(zip(keys, objects_dimensions))
 
@@ -71,12 +71,13 @@ s = initialize_server_socket(7777)
 data, recognize_addr = s.recvfrom(1024)
 print recognize_addr
 #recognize_addr = ('127.0.0.1', 7777)	
-for i in range(100):
+for i in range(1000):
 	selected, coefs = get_random_images_names()
 	print selected
 	x1,y1,w1,h1 = objects_dict[selected[0]]
 	x2,y2,w2,h2 = objects_dict[selected[1]]
-	x3,y3,w3,h3 = objects_dict[selected[2]]
+	#x3,y3,w3,h3 = objects_dict[selected[2]]
+	x3 = y3 = w3 = h3 = 0
 	#~ #w2=h2=w3=h3 = 0
 	coords = generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3)
 

@@ -5,7 +5,9 @@ import os
 
 im_path = sys.argv[1]
 im_dir = sys.argv[2]
+desired_size = sys.argv[3]
 
+desired_size = int(desired_size)
 if not os.path.exists(im_dir):
     os.makedirs(im_dir)
 
@@ -26,7 +28,7 @@ base[:] = (255,255,255)
 x = (h_big - h)/2
 y = (w_big - w)/2
 base[x:h+x,y:w+y]=im
-base = cv2.resize(base, (128,128))
+base = cv2.resize(base, (desired_size,desired_size))
 im_name = os.path.basename(im_path)
 print im_dir + im_name
 cv2.imwrite(im_dir + im_name, base)

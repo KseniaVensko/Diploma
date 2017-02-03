@@ -77,7 +77,7 @@ def initialize_models():
 	# TODO: maybe this is a bad practise
 	resize_images_to_standard_size(keys)
 	
-	objects_dimensions = images_utils.find_objects_hw(images_folder)
+	objects_dimensions = images_utils.find_objects_hw(keys)
 	objects_dict = dict(zip(keys, objects_dimensions))
 	
 	logger.write_to_log(log_file,my_name, "initialization of objects_dict complete")

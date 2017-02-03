@@ -18,7 +18,7 @@ objects = {}
 img_width, img_height = 128, 128
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", type=str, default="pretrained_vgg16.h5")
+parser.add_argument("--model", type=str, default="pretrained_vgg16_2.h5")
 parser.add_argument("--port", type=int, default=7777)
 options = parser.parse_args()
 global port
@@ -110,6 +110,9 @@ def teaching(path, objects):
 	for i,n in enumerate(keys):
 		dict[n] = i
 	for i in objects:
+		#TODO: it is about 2 or 3 objects on image
+		if not i:
+			continue
 		y[dict[i]] = 1
 	y = y.reshape((1,-1))
 	print 'training ' + str(objects)
