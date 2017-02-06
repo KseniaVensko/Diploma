@@ -89,10 +89,13 @@ def initialize_models():
 	objects_count = len(keys)
 	if object_coefs_file:
 		global object_coefs
-		# TODO: catch FileNotFound exception
-		object_coefs = np.loadtxt(object_coefs_file, dtype='float', delimiter = ' ')
-		if len(object_coefs) != objects_count:
-			print "objects coef count are too big or too small. Using random coefs"
+		try:
+			object_coefs = np.loadtxt(object_coefs_file, dtype='float', delimiter = ' ')
+			if len(object_coefs) != objects_count:
+				print "objects coef count are too big or too small. Using random coefs"
+				global object_coefs
+				object_coefs = randint(100, size=objects_count)
+		except IOError:
 			global object_coefs
 			object_coefs = randint(100, size=objects_count)
 	else:
@@ -219,7 +222,7 @@ def get_images_names():
 
 #TODO: check correctness because its not	
 def generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3):
-	output = np.zeros(shape=12, dtype=np.float)
+	output = np.zeros(shape=collage_images_count * coords_per_object, dtype=np.float)
 	x1,y1,a1,s1,points_rotated1 = generate_polygon(w1,h1,image_side_size,True)
 	output[:4] = x1,y1,a1,s1
 	correct = False
@@ -362,13 +365,20 @@ while True:
 		#sending_sock.sendto(teach_success, ('<broadcast>', port))
 
 	elif mes.startswith(generate_command):
-		selected = get_images_names()
-		# TODO: if len(selected)=2 you should take it into account when you will teach
-		coords = get_coordinates(selected)
-		print
-		print 'selected coords ' + str(coords)
-		print
-		result_name = images_utils.draw_image(selected,image_side_size,objects_dict,result_dir, coords)
+		try:
+			selected = get_images_names()
+			# TODO: if len(selected)=2 you should take it into account when you will teach
+			coords = get_coordinates(selected)
+			print
+			print 'selected coords ' + str(coords)
+			print
+			result_name = images_utils.draw_image(selected,image_side_size,objects_dict,result_dir, coords)
+		except IOError as e:
+			print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		except ValueError:
+			print "Value Error"
+		except ArithmeticError:
+			print "Arithmetic error"
 		
 		logger.write_to_log(log_file,my_name, "name of result image " + result_name)
 		print "sending generate success"
@@ -376,14 +386,16 @@ while True:
 		s.sendto(data, addr)
 		mes,addr = s.recvfrom(1024)
 		if 'waiting' in mes:
-			print "sending image "
+			print "sending image " + result_name
 			socket_utils.send_image(result_name, addr, s)
 			
 	elif mes.startswith('save_generate_model'):
 		mes = mes.split(',')
 		path = mes[1]
-		print "saving model to " + path
-		model.save(path)
+		print "saving selecting_model to " + os.path.splitext(path)[0] + "_selecting.h5"
+		selecting_model.save(path)
+		print "saving locate_model to " + os.path.splitext(path)[0] + "_locate.h5"
+		locate_model.save(path)
 		coefs_path = os.path.splitext(path)[0] + "_object_coefs.txt"
 		print "saving object coefs to " + coefs_path
 		np.savetxt(coefs_path, object_coefs, fmt='%u', delimiter=' ')
