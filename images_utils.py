@@ -11,7 +11,6 @@ log_file = 'loggers/images_utils_logger.txt'
 
 # finds an object on a white background and returns coordinates of bounding rectangle
 def edge_detect(file_name, tresh_min, tresh_max):
-	print file_name
 	image = cv2.imread(file_name)
 	gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 	#gray = cv2.GaussianBlur(gray, (5,5),0)
@@ -39,7 +38,6 @@ def edge_detect(file_name, tresh_min, tresh_max):
 	h = max_y - min_y
 	x = min_x
 	y = min_y
-	print x,y,w,h
 	#cv2.imwrite(file_name, image)
 	
 	return x,y,w,h
@@ -92,7 +90,6 @@ def ceil_coords(coords):
 def cut_and_rotate_roi(im_name, angle, s):
 	im = cv2.imread(im_name)
 	# scale
-	print str(int(math.ceil(image_side_size*s)))
 	im = cv2.resize(im, (int(math.ceil(image_side_size*s)), int(math.ceil(image_side_size*s))))
 	temp_name = os.path.splitext(im_name)[0] + '_temp.jpg'
 	cv2.imwrite(temp_name, im)
@@ -109,8 +106,13 @@ def cut_and_rotate_roi(im_name, angle, s):
 	return h,w,im_roi_rotated
 
 def draw_image(selected, result_size, objects_dict, images_folder, coords):
-	h1=w1=h2=w2=h3=w3=0
-	x1, y1, a1, s1, x2, y2, a2, s2, x3, y3, a3, s3 = coords
+	h1=w1=h2=w2=h3=w3=x2=y2=a2=s2=x3=y3=a3=s3=0
+	if len(selected) > 2:
+		x1, y1, a1, s1, x2, y2, a2, s2, x3, y3, a3, s3 = coords
+	elif len(selected) > 1:
+		x1, y1, a1, s1, x2, y2, a2, s2 = coords
+	else:
+		x1, y1, a1, s1 = coords
 	# TODO: this is coorinates of turned and scaled polygon, but I use them as they are only scaled
 	x1, y1, x2, y2, x3, y3 = ceil_coords([x1, y1, x2, y2, x3, y3])
 	print 'points for drawing ' + str([x1, y1, x2, y2, x3, y3])
@@ -126,8 +128,13 @@ def draw_image(selected, result_size, objects_dict, images_folder, coords):
 			print "third object"
 			h3,w3,roi3 = cut_and_rotate_roi(selected[2], a3, s3)
 
-	res_size = max(h1+y1,w1+x1,h2+y2,w2+x2,h3+y3,w3+x3)	
-	canvas = create_blank(res_size, res_size)
+	res_size = max(h1+y1,w1+x1,h2+y2,w2+x2,h3+y3,w3+x3)
+	# TODO: coords are on the result_size^2 cube, right? - then what about res_size
+	if res_size < result_size:
+		canvas = create_blank(result_size, result_size)
+	else:
+		print "I shouldn`t be here, because coords should be in [0..result_size] interval"
+		canvas = create_blank(res_size, res_size)
 		
 	putLogo(roi1, canvas, x1, y1)
 	
@@ -144,6 +151,7 @@ def draw_image(selected, result_size, objects_dict, images_folder, coords):
 	result_name = images_folder + '_'.join([name1_clear, name2_clear, name3_clear]) + '.jpg'
 	
 	canvas = cv2.resize(canvas, (result_size, result_size))
+	print "result size is " + str(canvas.size)
 	
 	if not os.path.exists(images_folder):
 		os.makedirs(images_folder)
