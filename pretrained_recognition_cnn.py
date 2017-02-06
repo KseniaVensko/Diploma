@@ -76,6 +76,7 @@ def preprocess_im(image_path):
 	width, height = im.size
 	if width != img_width or height != img_height:
 	# TODO: this is a bad practise
+		print "resizing from " + str(width) + ":" + str(height) + " to " + str(img_width) + ":" + str(img_height)
 		im = im.resize((img_width,img_height))
 		im.save(image_path)
 	im.close()
@@ -147,10 +148,9 @@ while True:
 		
 		logger.write_to_log(log_file,my_name, "predict " + str(predict))
 		seen_objects = decode_predict_proba(predict)
-		
 		logger.write_to_log(log_file,my_name, "seen objects " + str(seen_objects))
 		print "sending recognize success with objects " + str(seen_objects)
-		data = recognize_sucess + ':' + str(seen_objects)
+		data = recognize_sucess + ':' + ','.join(seen_objects)
 		send_mes(data,addr)
 		
 	elif mes.startswith('save_recognize_model'):
@@ -159,4 +159,5 @@ while True:
 		print "saving model to " + path
 		model.save(path)
 		send_mes(recognize_sucess, addr)
+		break
 
