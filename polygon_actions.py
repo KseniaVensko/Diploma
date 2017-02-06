@@ -31,11 +31,14 @@ def generate_polygon_from_points(h,w,coords):
 def generate_polygon(w,h, image_side_size, is_first=False):
 	check = False
 	max_scale = 1.2
+	min_scale = 0.5
 	if w > image_side_size/1.5 and h > image_side_size/1.5 and not is_first:
 		max_scale = 1
+	if w < image_side_size/2 and h < image_side_size/2:
+		min_scale = 0.8
 	while not check:
 		a = randint(360) - 1
-		s = np.random.uniform(0.5,1.2,1)[0]
+		s = np.random.uniform(0.5,max_scale,1)[0]
 		x = randint(image_side_size - w) - 1
 		y = randint(image_side_size - h) - 1
 		
@@ -43,8 +46,7 @@ def generate_polygon(w,h, image_side_size, is_first=False):
 		points_scaled = scale_polygon(points, s)
 		points_rotated = rotate_polygon(points_scaled, a)
 		check = check_coords_above_zero(points_rotated)
-	print list(points_rotated)
-	print x,y,a,s
+		
 	return x,y,a,s,points_rotated
 
 def correct_second_polygon(points1_rotated, points2_rotated):
@@ -52,7 +54,6 @@ def correct_second_polygon(points1_rotated, points2_rotated):
 	if polygon_area(points1_rotated)/2 > int_.area:
 		logger.write_to_log(log_file,my_name, "second_polygon 1/2area" + str(polygon_area(points1_rotated)/2 ) + ' int_area ' + str(int_.area))
 		return True
-	print 'fail 2'
 	return False
 
 def correct_third_polygon(points1_rotated, points2_rotated, points3_rotated):
@@ -72,10 +73,7 @@ def correct_third_polygon(points1_rotated, points2_rotated, points3_rotated):
 		if polygon_area(points2_rotated)/2 > int_23.area:
 			logger.write_to_log(log_file,my_name, "third_polygon 1/2area2" + str(polygon_area(points2_rotated)/2 ) + ' int23_area ' + str(int_23.area))
 			print 'im returning true because im thinking that ' + 'area1 ' + str(polygon_area(points1_rotated)/2) + 'is bigger than ' + str(area1)
-			print
 			return True
-	print 'fail 3'
-	print
 	return False
 
 def polygon_area(points):
@@ -86,7 +84,6 @@ def two_polygons_intersection(points1, points2):
 	p = Polygon(points1)
 	p2 = Polygon(points2)
 	x = p.intersection(p2)
-	#print x
 	return x
 
 def scale_polygon(points, fact):
