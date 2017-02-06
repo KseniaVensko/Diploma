@@ -37,10 +37,13 @@ def initialize_client_socket_tcp(port):
 def send_image(file_name, addr, s):
 	# send name
 	s.sendto(file_name, addr)
+	buf = 1024
 	with open(file_name, 'rb') as f:
 		data = f.read(buf)
-	# send binary str
-	s.sendto(data, addr)
+		while data:
+			s.sendto(data, addr)
+			data = f.read(buf)
+	s.sendto("end.", addr)
 
 def receive_image(s):
 	# receive name
@@ -48,10 +51,14 @@ def receive_image(s):
 	folder, file_name = os.path.split(name)
 	if not os.path.exists(folder):
 		os.makedirs(folder)
-
+	buf = 1024
+	im = ''
 	data,addr = s.recvfrom(buf)
+	while data != "end.":
+		im += data
+		data,addr = s.recvfrom(buf)
 	with open(name.strip(), 'wb') as f:
-		f.write(data)
+		f.write(im)
 
 	return name.strip()
 	
