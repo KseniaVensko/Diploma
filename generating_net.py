@@ -400,7 +400,8 @@ while True:
 		print "saving object coefs to " + coefs_path
 		np.savetxt(coefs_path, object_coefs, fmt='%u', delimiter=' ')
 		
-		send_mes(recognize_sucess, addr)
-			
+		s.sendto(generate_sucess, addr)
+		print "sended"
+		break
 		#sending_sock.sendto(data, ('<broadcast>', port))
 		
