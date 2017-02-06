@@ -1,7 +1,8 @@
 import socket
 import os
 
-buf = 128*128*3
+# TODO: not obvious constant, maybe move it to func argument
+buf = 512*512*3
 
 def initialize_server_socket(port):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
