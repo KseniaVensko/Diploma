@@ -37,7 +37,7 @@ def client_thread(conn):
 def initialize_server_socket_tcp(addr,port):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	s.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
 	s.bind((addr, port))
 	s.listen(10)
 	
@@ -46,7 +46,7 @@ def initialize_server_socket_tcp(addr,port):
 def initialize_client_socket_tcp(addr,port):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	s.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
 	s.connect((addr, port))
 	
 	return s
