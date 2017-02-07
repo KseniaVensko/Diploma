@@ -43,11 +43,19 @@ def initialize_server_socket_tcp(addr,port):
 	
 	return s
 	
-def initialize_client_socket_tcp(port):
+def initialize_client_socket_tcp(addr,port):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	s.connect((addr, port))
 	
+	return s
+
+def send_tcp_command(data, s):
+	s.send(data)
+
+def recv_tcp_command(s):
+	s.recv(1024)
 	return s
 
 def send_image(file_name, addr, s):
