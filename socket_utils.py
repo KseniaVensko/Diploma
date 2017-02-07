@@ -58,6 +58,16 @@ def recv_tcp_command(s):
 	mes = s.recv(1024)
 	return mes
 
+def send_tcp_image(file_name, s):
+	s.send(file_name)
+	buf = 1024
+	with open(file_name, 'rb') as f:
+		data = f.read(buf)
+		while data:
+			s.send(data)
+			data = f.read(buf)
+	s.send("end.")
+
 def send_image(file_name, addr, s):
 	# send name
 	s.sendto(file_name, addr)
@@ -68,6 +78,23 @@ def send_image(file_name, addr, s):
 			s.sendto(data, addr)
 			data = f.read(buf)
 	s.sendto("end.", addr)
+
+def receive_tcp_image(s):
+	# receive name
+	name = s.recv(1024)
+	folder, file_name = os.path.split(name)
+	if not os.path.exists(folder):
+		os.makedirs(folder)
+	buf = 1024
+	im = ''
+	data = s.recv(buf)
+	while data != "end.":
+		im += data
+		data = s.recv(buf)
+	with open(name.strip(), 'wb') as f:
+		f.write(im)
+
+	return name.strip()
 
 def receive_image(s):
 	# receive name
