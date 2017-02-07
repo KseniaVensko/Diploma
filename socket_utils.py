@@ -55,8 +55,8 @@ def send_tcp_command(data, s):
 	s.send(data)
 
 def recv_tcp_command(s):
-	s.recv(1024)
-	return s
+	mes = s.recv(1024)
+	return mes
 
 def send_image(file_name, addr, s):
 	# send name
