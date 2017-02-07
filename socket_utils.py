@@ -52,21 +52,18 @@ def initialize_client_socket_tcp(addr,port):
 	return s
 
 def send_tcp_command(data, s):
-	s.send(data)
+	s.sendall(data)
 
 def recv_tcp_command(s):
 	mes = s.recv(1024)
 	return mes
 
 def send_tcp_image(file_name, s):
-	s.send(file_name)
-	buf = 1024
+	s.sendall(file_name)
 	with open(file_name, 'rb') as f:
 		data = f.read(buf)
-		while data:
-			s.send(data)
-			data = f.read(buf)
-	s.send("end.")
+	s.sendall(data)
+	print "sended"
 
 def send_image(file_name, addr, s):
 	# send name
@@ -82,18 +79,13 @@ def send_image(file_name, addr, s):
 def receive_tcp_image(s):
 	# receive name
 	name = s.recv(1024)
+	print "name received"
 	folder, file_name = os.path.split(name)
 	if not os.path.exists(folder):
 		os.makedirs(folder)
-	buf = 1024
-	im = ''
 	data = s.recv(buf)
-	while data != "end.":
-		im += data
-		data = s.recv(buf)
 	with open(name.strip(), 'wb') as f:
-		f.write(im)
-
+		f.write(data)
 	return name.strip()
 
 def receive_image(s):
