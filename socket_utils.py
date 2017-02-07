@@ -19,11 +19,12 @@ def initialize_client_socket(port):
 	
 	return s
 	
-def initialize_server_socket_tcp(port):
+def initialize_server_socket_tcp(addr,port):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-	s.bind(('', port))
+	#s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	s.bind((addr, port))
+	s.listen(10)
 	
 	return s
 	
