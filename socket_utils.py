@@ -19,8 +19,12 @@ def initialize_client_socket(port):
 	
 	return s
 
-def send_mes_to_client(s, data):
-	s.send(data)
+def send_mes(s, data, addr):
+	s.sendto(data,addr)
+	
+def recv_mes(s):
+	mes, addr = s.recvfrom(1024)
+	return mes,addr
 
 def client_thread(conn):
     conn.send("Welcome to the Server. Type messages and press enter to send.\n")
