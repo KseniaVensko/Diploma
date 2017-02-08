@@ -21,7 +21,8 @@ options = parser.parse_args()
 
 port = vars(options)['port']
 my_name = "agent"
-log_file = 'loggers/agent_logger.txt'
+
+log_file = os.path.dirname(os.path.abspath(__file__)) + '/loggers/agent_logger.txt'
 
 def accept_tcp_connections():
 	generating_addr = recognition_addr = None
