@@ -153,7 +153,7 @@ for i in range(5):
 			#~ send_tcp_command(generate_teach_command + ',' + str(False), generating_s)
 			#~ mes = recv_tcp_command(generating_s)
 			send_mes(s, generate_teach_command + ',' + str(False), generating_addr)
-			mes, addr = recv_tcp_command(s)
+			mes, addr =recv_mes(s)
 			
 			
 			print mes
@@ -161,9 +161,9 @@ for i in range(5):
 		print 'instead of predictions receives another mes ' + mes
 
 send_mes(s, generate_save_command + ',' + 'generating_model.h5', generating_addr)
-mes, addr = recv_tcp_command(s)
+mes, addr = recv_mes(s)
 send_mes(s, recognize_save_command + ',' + 'recognize_model.h5', generating_addr)
-mes, addr = recv_tcp_command(s)
+mes, addr = recv_mes(s)
 
 print "recognition miss " + str(recognizing_miss)
 print "generating miss " + str(generating_miss)
