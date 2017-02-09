@@ -38,7 +38,6 @@ atom = 10
 # for choosing names in prediction of selecting_net
 threshold = 0.8
 
-image_side_size = 512
 # will be used for sequence preprocessing
 max_dimension = 1
 scaler = MinMaxScaler(feature_range=(0,1))
@@ -50,11 +49,12 @@ selecting_model = None
 keys = []
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dir", type=str, default="images/big_without_walrus/")
-parser.add_argument("--result_dir", type=str, default="images/result_dir/")
+parser.add_argument("--dir", type=str, default=script_path + "/images/source/")
+parser.add_argument("--result_dir", type=str, default=script_path +"/images/result/")
 parser.add_argument("--object_coefs", type=str, default="")
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--addr", type=str, default='127.0.0.1')
+parser.add_argument("--imsize", type=int, default=512)
 options = parser.parse_args()
 
 images_folder = vars(options)['dir']
@@ -62,6 +62,7 @@ result_dir = vars(options)['result_dir']
 object_coefs_file = vars(options)['object_coefs']
 port = vars(options)['port']
 address = vars(options)['addr']
+image_side_size = vars(options)['imsize']
 
 def my_init(shape, name=None):
     return initializations.uniform(shape, scale=0.5, name=name)
