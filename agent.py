@@ -17,9 +17,11 @@ recognize_save_command = 'save_recognize_model'
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
+parser.add_argument("--count", type=int, default=5)
 options = parser.parse_args()
 
 port = vars(options)['port']
+count = vars(options)['count']
 my_name = "agent"
 
 log_file = os.path.dirname(os.path.abspath(__file__)) + '/loggers/agent_logger.txt'
@@ -74,7 +76,7 @@ generating_miss = 0
 recognizing_miss = 0
 more_or_eq_than_half_collage_recornized_count = 0
 
-for i in range(5):
+for i in range(count):
 	print 'sending generate command'
 
 	#~ send_tcp_command(generate_command, generating_s)
@@ -153,15 +155,18 @@ for i in range(5):
 			#~ send_tcp_command(generate_teach_command + ',' + str(False), generating_s)
 			#~ mes = recv_tcp_command(generating_s)
 			send_mes(s, generate_teach_command + ',' + str(False), generating_addr)
-			mes, addr = recv_tcp_command(s)
+			mes, addr =recv_mes(s)
 			
 			
 			print mes
 	else:
 		print 'instead of predictions receives another mes ' + mes
 
-#mes = send_command_new(generate_save_command + ',' + 'generating_model.h5', generate_addr)
-#mes = send_command_new(recognize_save_command + ',' + 'recognize_model.h5', recognize_addr)
+send_mes(s, generate_save_command + ',' + 'generating_model.h5', generating_addr)
+mes, addr = recv_mes(s)
+send_mes(s, recognize_save_command + ',' + 'recognize_model.h5', recognition_addr)
+mes, addr = recv_mes(s)
+
 print "recognition miss " + str(recognizing_miss)
 print "generating miss " + str(generating_miss)
 print "more_or_eq_than_half_collage_recornized_count " + str(more_or_eq_than_half_collage_recornized_count)

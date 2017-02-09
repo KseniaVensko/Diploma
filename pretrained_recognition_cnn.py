@@ -14,13 +14,14 @@ import os
 theano.config.openmp = True
 
 my_name = "pretrained_recognition"
-log_file = os.path.dirname(os.path.abspath(__file__)) + '/loggers/recognition_logger.txt'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+log_file = current_dir + '/loggers/recognition_logger.txt'
 coef = 0.5
 objects_count = 3
 objects = {}
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", type=str, default="pretrained_vgg16_2.h5")
+parser.add_argument("--model", type=str, default=current_dir + "/pretrained_vgg16_2.h5")
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--addr", type=str, default='127.0.0.1')
 parser.add_argument("--imsize", type=int, default=128)
@@ -52,7 +53,7 @@ def initialize():
 	global keys
 	keys = []
 
-	with open('objects.txt') as f:
+	with open(current_dir + '/objects.txt') as f:
 			for line in f:
 				keys.append(line.rstrip('\n'))
 	
