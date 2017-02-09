@@ -18,16 +18,17 @@ log_file = os.path.dirname(os.path.abspath(__file__)) + '/loggers/recognition_lo
 coef = 0.5
 objects_count = 3
 objects = {}
-img_width, img_height = 128, 128
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="pretrained_vgg16_2.h5")
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--addr", type=str, default='127.0.0.1')
+parser.add_argument("--imsize", type=int, default=128)
 options = parser.parse_args()
 
 port = vars(options)['port']
 address = vars(options)['addr']
+imsize = vars(options)['imsize']
 global s
 global model
 # keys is array of objects i.e [bear,crocodile,...]
@@ -81,10 +82,10 @@ def preprocess_im(image_path):
 	# terrible crutch for resizing images (TODO: you should to remove this or not)
 	im = Image.open(image_path)
 	width, height = im.size
-	if width != img_width or height != img_height:
+	if width != imsize or height != imsize:
 	# TODO: this is a bad practise
-		print "resizing from " + str(width) + ":" + str(height) + " to " + str(img_width) + ":" + str(img_height)
-		im = im.resize((img_width,img_height))
+		print "resizing from " + str(width) + ":" + str(height) + " to " + str(imsize) + ":" + str(imsize)
+		im = im.resize((imsize,imsize))
 		im.save(image_path)
 	im.close()
 	
@@ -102,6 +103,7 @@ teach_command = 'objectteaching'
 teach_success = 'recognitionsuccess'
 recognize_command = 'recognize'
 recognize_sucess = 'seenobjects'
+recognize_save_command = 'save_recognize_model'
 
 def teaching(path, objects):
 	im = preprocess_im(path)
@@ -156,7 +158,7 @@ while True:
 		send_mes(s,data,addr)
 		#send_tcp_command(data, s)
 		
-	elif mes.startswith('save_recognize_model'):
+	elif mes.startswith(recognize_save_command):
 		mes = mes.split(',')
 		path = mes[1]
 		print "saving model to " + path
