@@ -1,6 +1,8 @@
 from keras.models import load_model
 import argparse
 import socket_utils
+from socket_utils import send_tcp_command, recv_tcp_command
+from socket_utils import send_mes, recv_mes
 import logger
 import numpy as np
 from keras.utils import np_utils
@@ -11,7 +13,7 @@ import theano
 theano.config.openmp = True
 
 my_name = "pretrained_recognition"
-log_file = 'loggers/recognition_logger.txt'
+log_file = os.path.dirname(os.path.abspath(__file__)) + '/loggers/recognition_logger.txt'
 coef = 0.5
 objects_count = 3
 objects = {}
@@ -20,8 +22,11 @@ img_width, img_height = 128, 128
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="pretrained_vgg16_2.h5")
 parser.add_argument("--port", type=int, default=7777)
+parser.add_argument("--addr", type=str, default='127.0.0.1')
 options = parser.parse_args()
-global port
+
+port = vars(options)['port']
+address = vars(options)['addr']
 global s
 global model
 # keys is array of objects i.e [bear,crocodile,...]
@@ -29,13 +34,14 @@ global keys
 
 def initialize():
 	model_file = vars(options)['model']
-	global port
-	port = vars(options)['port']
 	
 	logger.write_to_log(log_file,my_name, "load sockets and model")
 	global s
 	s = socket_utils.initialize_client_socket(port)
-	send_mes("recognize_net", ('<broadcast>', port))
+	#s = socket_utils.initialize_client_socket_tcp(address, port)
+	send_mes(s, "recognize_net", (address, port))
+	#send_tcp_command("recognize_net", s)
+	
 	global model
 	# will also take care of compiling the model using the saved training configuration
 	model = load_model(model_file)
@@ -89,14 +95,6 @@ def preprocess_im(image_path):
 	
 	return image
 
-def send_mes(data, addr):
-	s.sendto(data, addr)
-
-def receive_mes():
-	mes, addr = s.recvfrom(1024)
-	
-	return mes,addr
-
 initialize()
 
 teach_command = 'objectteaching'
@@ -124,7 +122,8 @@ def teaching(path, objects):
 	logger.write_to_log(log_file,my_name, "train " + str(y))
 
 while True:
-	mes, addr = receive_mes()
+	mes, addr = recv_mes(s)
+	#mes = recv_tcp_command(s)
 	
 	logger.write_to_log(log_file,my_name, "received mes " + mes)
 	
@@ -134,13 +133,15 @@ while True:
 		path = mes[1]
 		teaching(path, mes[2:])
 		print "sending teaching success"
-		send_mes(teach_success, addr)
+		send_mes(s, teach_success, addr)
+		#send_tcp_command(teach_success, s)
 
 	elif mes.startswith(recognize_command):
 		print "received recognize command"
-		#~ mes = mes.split(',')
-		#~ path = mes[1]
-		send_mes('waiting', addr)
+#		send_tcp_command('waiting', s)
+		send_mes(s,'waiting', addr)
+		
+		#path = socket_utils.receive_tcp_image(s)
 		path = socket_utils.receive_image(s)
 		print path
 		im = preprocess_im(path)
@@ -151,13 +152,15 @@ while True:
 		logger.write_to_log(log_file,my_name, "seen objects " + str(seen_objects))
 		print "sending recognize success with objects " + str(seen_objects)
 		data = recognize_sucess + ':' + ','.join(seen_objects)
-		send_mes(data,addr)
+		send_mes(s,data,addr)
+		#send_tcp_command(data, s)
 		
 	elif mes.startswith('save_recognize_model'):
 		mes = mes.split(',')
 		path = mes[1]
 		print "saving model to " + path
 		model.save(path)
-		send_mes(recognize_sucess, addr)
+		send_mes(s,recognize_sucess, addr)
+		#send_tcp_command(recognize_success, s)
 		break
 
