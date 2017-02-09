@@ -160,8 +160,11 @@ for i in range(5):
 	else:
 		print 'instead of predictions receives another mes ' + mes
 
-#mes = send_command_new(generate_save_command + ',' + 'generating_model.h5', generate_addr)
-#mes = send_command_new(recognize_save_command + ',' + 'recognize_model.h5', recognize_addr)
+send_mes(s, generate_save_command + ',' + 'generating_model.h5', generating_addr)
+mes, addr = recv_tcp_command(s)
+send_mes(s, recognize_save_command + ',' + 'recognize_model.h5', generating_addr)
+mes, addr = recv_tcp_command(s)
+
 print "recognition miss " + str(recognizing_miss)
 print "generating miss " + str(generating_miss)
 print "more_or_eq_than_half_collage_recornized_count " + str(more_or_eq_than_half_collage_recornized_count)
