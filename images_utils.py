@@ -6,8 +6,9 @@ import numpy as np
 import logger
 import math
 
-image_side_size = 512
-log_file = 'loggers/images_utils_logger.txt'
+#image_side_size = 512
+script_path = os.path.dirname(os.path.abspath(__file__))
+log_file = script_path + '/loggers/images_utils_logger.txt'
 
 # finds an object on a white background and returns coordinates of bounding rectangle
 def edge_detect(file_name, tresh_min, tresh_max):
@@ -87,7 +88,7 @@ def ceil_coords(coords):
 	return coords
 
 # TODO: maybe should take the size of image, not the standard size
-def cut_and_rotate_roi(im_name, angle, s):
+def cut_and_rotate_roi(im_name, angle, s, image_side_size):
 	im = cv2.imread(im_name)
 	# scale
 	im = cv2.resize(im, (int(math.ceil(image_side_size*s)), int(math.ceil(image_side_size*s))))
@@ -117,16 +118,16 @@ def draw_image(selected, result_size, objects_dict, images_folder, coords):
 	x1, y1, x2, y2, x3, y3 = ceil_coords([x1, y1, x2, y2, x3, y3])
 	print 'points for drawing ' + str([x1, y1, x2, y2, x3, y3])
 
-	h1,w1,roi1 = cut_and_rotate_roi(selected[0], a1, s1)
+	h1,w1,roi1 = cut_and_rotate_roi(selected[0], a1, s1, result_size)
 	
 	if len(selected) > 1:
-		h2,w2,roi2 = cut_and_rotate_roi(selected[1], a2, s2)
+		h2,w2,roi2 = cut_and_rotate_roi(selected[1], a2, s2, result_size)
 		
 	if len(selected) > 2:
 		# TODO: this is a stub, think about selected coords: zeros or length? and see also line 127
 		if x3 != y3 != a3 != s3 != 0:
 			print "third object"
-			h3,w3,roi3 = cut_and_rotate_roi(selected[2], a3, s3)
+			h3,w3,roi3 = cut_and_rotate_roi(selected[2], a3, s3, result_size)
 
 	res_size = max(h1+y1,w1+x1,h2+y2,w2+x2,h3+y3,w3+x3)
 	# TODO: coords are on the result_size^2 cube, right? - then what about res_size

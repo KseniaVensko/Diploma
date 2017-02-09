@@ -2,9 +2,11 @@ import numpy as np
 from shapely.geometry import Polygon
 from shapely import affinity
 import math
+import os
 import logger
 
-log_file = 'loggers/polygon_logger.txt'
+script_path = os.path.dirname(os.path.abspath(__file__))
+log_file = script_path + '/loggers/polygon_logger.txt'
 my_name = 'polygon_actions'
 randint = np.random.random_integers
 
