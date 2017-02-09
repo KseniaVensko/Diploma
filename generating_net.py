@@ -19,7 +19,8 @@ import theano
 theano.config.openmp = True
 
 randint = np.random.random_integers
-log_file = 'loggers/generating_net_logger.txt'
+script_path = os.path.dirname(os.path.abspath(__file__))
+log_file = script_path + '/loggers/generating_net_logger.txt'
 my_name="generating_net"
 
 # for selecting_net
@@ -79,7 +80,7 @@ def initialize_models():
 	global keys
 	keys = [images_folder + f for f in sorted(os.listdir(images_folder)) if f.endswith('.jpg')]
 	
-	with open('objects.txt', 'w') as f:
+	with open(script_path + '/objects.txt', 'w') as f:
 		for k in keys:
 			f.write(os.path.splitext(os.path.basename(k))[0].translate(None, digits) + '\n')
 	# TODO: maybe this is a bad practise
@@ -400,10 +401,10 @@ while True:
 		mes = mes.split(',')
 		path = mes[1]
 		print "saving selecting_model to " + os.path.splitext(path)[0] + "_selecting.h5"
-		selecting_model.save(path)
+		selecting_model.save(script_path + os.path.splitext(path)[0] + "_selecting.h5" )
 		print "saving locate_model to " + os.path.splitext(path)[0] + "_locate.h5"
-		locate_model.save(path)
-		coefs_path = os.path.splitext(path)[0] + "_object_coefs.txt"
+		locate_model.save(script_path + os.path.splitext(path)[0] + "_locate.h5")
+		coefs_path = script_path + os.path.splitext(path)[0] + "_object_coefs.txt"
 		print "saving object coefs to " + coefs_path
 		np.savetxt(coefs_path, object_coefs, fmt='%u', delimiter=' ')
 		
