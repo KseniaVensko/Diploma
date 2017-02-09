@@ -10,6 +10,7 @@ from keras.preprocessing import image as image_utils
 import time
 from PIL import Image
 import theano
+import os
 theano.config.openmp = True
 
 my_name = "pretrained_recognition"
