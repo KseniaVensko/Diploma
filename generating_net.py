@@ -9,6 +9,8 @@ import os
 from string import digits
 import images_utils
 import socket_utils
+from socket_utils import send_tcp_command, recv_tcp_command
+from socket_utils import send_mes, recv_mes
 import logger
 from PIL import Image
 from polygon_actions import *
@@ -51,12 +53,14 @@ parser.add_argument("--dir", type=str, default="images/big_without_walrus/")
 parser.add_argument("--result_dir", type=str, default="images/result_dir/")
 parser.add_argument("--object_coefs", type=str, default="")
 parser.add_argument("--port", type=int, default=7777)
+parser.add_argument("--addr", type=str, default='127.0.0.1')
 options = parser.parse_args()
 
 images_folder = vars(options)['dir']
 result_dir = vars(options)['result_dir']
 object_coefs_file = vars(options)['object_coefs']
 port = vars(options)['port']
+address = vars(options)['addr']
 
 def my_init(shape, name=None):
     return initializations.uniform(shape, scale=0.5, name=name)
@@ -328,10 +332,9 @@ def change_object_coefs(corrective):
 	print "after " + str(object_coefs)
 	logger.write_to_log(log_file,my_name, "coefs was changed to " + str(object_coefs))
 
-# TODO: why not working the line below
-#if __name__ == 'main':
 locate_model, selecting_model, objects_dict = initialize_models()
-#listening_sock, sending_sock = socket_utils.initialize_sockets(port)
+
+#s = socket_utils.initialize_client_socket_tcp(address, port)
 s = socket_utils.initialize_client_socket(port)
 print 'initialization complete'
 
@@ -340,10 +343,12 @@ teach_success = 'generatingnetsuccess'
 generate_command = 'generate'
 generate_sucess = 'imagegenerated'
 
-s.sendto("generate_net", ('<broadcast>', port))
+#send_tcp_command("generate_net", s)
+send_mes(s, "generate_net", (address, port))
+
 while True:
-	mes, addr = s.recvfrom(1024)
-#	mes = listening_sock.recv(1024)
+	#mes = recv_tcp_command(s)
+	mes, addr = recv_mes(s)
 	
 	logger.write_to_log(log_file,my_name, "received mes " + mes)
 	if mes.startswith(teach_command):
@@ -361,17 +366,14 @@ while True:
 			locate_model, selecting_model = teaching(locate_model, selecting_model, x, y, input_names, names)
 		
 		print "sending teaching success"
-		s.sendto(teach_success, addr)
-		#sending_sock.sendto(teach_success, ('<broadcast>', port))
+		#send_tcp_command(teach_success, s)
+		send_mes(s, teach_success, addr)
 
 	elif mes.startswith(generate_command):
 		try:
 			selected = get_images_names()
 			# TODO: if len(selected)=2 you should take it into account when you will teach
 			coords = get_coordinates(selected)
-			print
-			print 'selected coords ' + str(coords)
-			print
 			result_name = images_utils.draw_image(selected,image_side_size,objects_dict,result_dir, coords)
 		except IOError as e:
 			print "I/O error({0}): {1}".format(e.errno, e.strerror)
@@ -383,10 +385,15 @@ while True:
 		logger.write_to_log(log_file,my_name, "name of result image " + result_name)
 		print "sending generate success"
 		data = generate_sucess + ',' + result_name
-		s.sendto(data, addr)
-		mes,addr = s.recvfrom(1024)
+		
+		#~ send_tcp_command(data,s)
+		#~ mes = recv_tcp_command(s)
+		send_mes(s,data,addr)
+		mes, addr = recv_mes(s)
+		
 		if 'waiting' in mes:
 			print "sending image " + result_name
+			#socket_utils.send_tcp_image(result_name, s)
 			socket_utils.send_image(result_name, addr, s)
 			
 	elif mes.startswith('save_generate_model'):
@@ -400,8 +407,8 @@ while True:
 		print "saving object coefs to " + coefs_path
 		np.savetxt(coefs_path, object_coefs, fmt='%u', delimiter=' ')
 		
-		s.sendto(generate_sucess, addr)
+		#send_tcp_command(generate_success, s)
+		send_mes(s,generate_sucess, addr)
 		print "sended"
 		break
-		#sending_sock.sendto(data, ('<broadcast>', port))
 		
