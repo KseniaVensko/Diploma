@@ -1,7 +1,6 @@
 import sys
 import time 
 import requests
-import cv2
 import operator
 import numpy as np
 import yaml
