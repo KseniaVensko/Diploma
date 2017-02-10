@@ -4,6 +4,7 @@ from socket_utils import send_mes, recv_mes
 import logger
 import time
 from recognize_image_microsoft import recognize_image
+import os
 
 my_name = "pretrained_recognition"
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -15,20 +16,19 @@ img_width, img_height = 128, 128
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
+parser.add_argument("--addr", type=str, default='127.0.0.1')
 options = parser.parse_args()
-global port
+addr = vars(options)['addr']
+port = vars(options)['port']
 global s
 # keys is array of objects i.e [bear,crocodile,...]
 global keys
 
 def initialize():
-	global port
-	port = vars(options)['port']
-	
 	logger.write_to_log(log_file,my_name, "load sockets and model")
 	global s
 	s = socket_utils.initialize_client_socket(port)
-	send_mes(s, "recognize_net", ('<broadcast>', port))
+	send_mes(s, "recognize_net", (addr, port))
 	global keys
 	keys = []
 
