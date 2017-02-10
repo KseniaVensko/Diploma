@@ -1,8 +1,6 @@
 from keras.models import Sequential
 from keras.layers import Dense
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-#from sklearn.metrics import mean_squared_error
 from keras import initializations
 import argparse
 import os
@@ -40,7 +38,6 @@ threshold = 0.8
 
 # will be used for sequence preprocessing
 max_dimension = 1
-scaler = MinMaxScaler(feature_range=(0,1))
 objects_dimensions = np.asarray([])
 objects_dict = {}
 
@@ -94,8 +91,8 @@ def initialize_models():
 	
 	objects_count = len(keys)
 	if object_coefs_file:
-		global object_coefs
 		try:
+			global object_coefs
 			object_coefs = np.loadtxt(object_coefs_file, dtype='float', delimiter = ' ')
 			if len(object_coefs) != objects_count:
 				print "objects coef count are too big or too small. Using random coefs"
@@ -121,7 +118,6 @@ def initialize_models():
 	# divide h/w
 	b = np.divide(objects_dimensions[:,3],objects_dimensions[:,2])
 	b = b.reshape(-1,1)
-#	scaler.fit(b)
 	inputs = 3
 	locate_model = Sequential()
 	# input: h1/w1 h2/w2 h3/w3
@@ -299,8 +295,6 @@ def get_coordinates(selected):
 	x = np.asarray(x)
 	global current_x_sequence
 	current_x_sequence = x
-	# normalisation
-#	x = scaler.transform(x)
 	x = x.reshape(1,-1)
 	predict = locate_model.predict_on_batch(x)
 	predict = predict[0]
@@ -311,7 +305,6 @@ def get_coordinates(selected):
 	
 	if not check_if_correct(predict,h1,w1,h2,w2,h3,w3):
 		predict = generate_correct_random_output_coords(w1,h1,w2,h2,w3,h3)
-#	predict = scaler.inverse_transform(predict)
 	# TODO: ceil coords for better teaching
 	global current_y_sequence
 	current_y_sequence = predict
