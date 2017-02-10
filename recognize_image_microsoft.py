@@ -2,7 +2,6 @@ import time
 import requests
 
 _url = 'https://westus.api.cognitive.microsoft.com/vision/v1.0/analyze'
-_key = "c45f88d8f4204d65ac53265d898978fe" #Here you have to paste your primary key
 _maxNumRetries = 10
 _treshold = 0
 _max_count = 10
@@ -59,13 +58,13 @@ def read_image(path):
 		data = f.read()
 	return data
 
-def recognize_image(path):
+def recognize_image(path, key):
 	data = read_image(path)
 	
 	params = { 'visualFeatures' : 'Tags'} 
 	
 	headers = dict()
-	headers['Ocp-Apim-Subscription-Key'] = _key
+	headers['Ocp-Apim-Subscription-Key'] = key
 	headers['Content-Type'] = 'application/octet-stream'
 	
 	json = None

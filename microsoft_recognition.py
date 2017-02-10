@@ -17,9 +17,11 @@ img_width, img_height = 128, 128
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--addr", type=str, default='127.0.0.1')
+parser.add_argument("--key", type=str, default='', help='api key for microsoft computer vision service')
 options = parser.parse_args()
 addr = vars(options)['addr']
 port = vars(options)['port']
+key = vars(options)['key']
 global s
 # keys is array of objects i.e [bear,crocodile,...]
 global keys
@@ -97,7 +99,7 @@ while True:
 		send_mes(s, 'waiting', addr)
 		path = socket_utils.receive_image(s)
 		print path
-		recognition_result = filter_tags(recognize_image(path))
+		recognition_result = filter_tags(recognize_image(path, key))
 		print "sending recognize success with objects " + ", ".join(recognition_result)
 		data = recognize_sucess + ':' + ",".join(recognition_result)
 		send_mes(s, data,addr)
