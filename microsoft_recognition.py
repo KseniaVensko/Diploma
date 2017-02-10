@@ -107,6 +107,7 @@ while True:
 	elif mes.startswith(recognize_save_command):
 		mes = mes.split(',')
 		path = mes[1]
-		print "saving model to " + path
+		print "quiting" 
 		send_mes(s, recognize_sucess, addr)
+		break
 
