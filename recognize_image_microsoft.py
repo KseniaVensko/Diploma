@@ -1,9 +1,5 @@
-import sys
 import time 
 import requests
-import operator
-import numpy as np
-import yaml
 
 _url = 'https://westus.api.cognitive.microsoft.com/vision/v1.0/analyze'
 _key = "c45f88d8f4204d65ac53265d898978fe" #Here you have to paste your primary key
