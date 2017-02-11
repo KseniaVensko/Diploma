@@ -170,7 +170,6 @@ def get_random_images_names():
 	selected.append(im1)
 	coefs.append(i1)
 	
-	# TODO: I removed check_image_shape because it doesnot matter, test it
 	i2 = randint(len(keys)) - 1
 	im2 = keys[i2]
 	while im1.translate(None, digits) == im2.translate(None, digits):
@@ -275,6 +274,17 @@ def check_if_correct(coords,h1,w1,h2,w2,h3,w3):
 			else:
 				return False
 
+def normalize_predict(predict):
+	# a should be 0..360
+	# s should be 0.5..1.2
+	predict[2] = predict[2] % 360
+	predict[6] = predict[6] % 360
+	s_range_max = 1.2 - 0.5
+	predict[3] = (predict[3] % s_range_max) + 0.5
+	predict[7] = (predict[7] % s_range_max) + 0.5
+
+	return predict
+	
 def get_coordinates(selected):
 	x1,y1,w1,h1 = objects_dict[selected[0]]
 	w2=h2=w3=h3 = 0
@@ -297,7 +307,7 @@ def get_coordinates(selected):
 	current_x_sequence = x
 	x = x.reshape(1,-1)
 	predict = locate_model.predict_on_batch(x)
-	predict = predict[0]
+	predict = normalize_predict(predict[0])
 	
 	logger.write_to_log(log_file,my_name, "----------------")
 	logger.write_to_log(log_file,my_name, "predicted coords " + str(predict))
