@@ -70,7 +70,7 @@ def send_command_new(data, addr):
 	return data
 
 def write_metrics_to_json(metrics, file_name):
-	print "writing metrics to " + script_path + file_name
+	print "writing metrics to " + script_path + '/' + file_name
 	with open(script_path + '/' + file_name, 'w') as f:
 		json.dump(metrics, f)	
 
@@ -155,6 +155,7 @@ try:
 			if set(objects) != set(answer):
 				print "prediction was not correct"
 				matches_percentage = float(len(set(objects) & set(answer))) / float(len(objects))
+				one_iteration_metrics['guessing_percentage'] = matches_percentage
 
 				if matches_percentage >= 0.5:
 					more_or_eq_than_half_collage_recornized_count += 1
@@ -185,7 +186,7 @@ try:
 				#~ send_tcp_command(generate_teach_command + ',' + str(False), generating_s)
 				#~ mes = recv_tcp_command(generating_s)
 				send_mes(s, generate_teach_command + ',' + str(False), generating_addr)
-				mes, addr =recv_mes(s)
+				mes, addr = recv_mes(s)
 				
 				
 				print mes
