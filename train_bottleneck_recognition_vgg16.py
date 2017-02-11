@@ -15,6 +15,7 @@ parser.add_argument("--train_dir", type=str, default=current_dir + "/images/trai
 parser.add_argument("--validation_dir", type=str, default=current_dir + "/images/validation_dir/", help='The last slash is required')
 parser.add_argument("--weights_path", type=str, default=current_dir + '/vgg16_weights.h5')
 parser.add_argument("--result_model_path", type=str, default=current_dir + '/pretrained_vgg16_3.h5')
+parser.add_argument("--rotate", type=bool, default=False)
 parser.add_argument("--imsize", type=int, default=224)
 options = parser.parse_args()
 
@@ -23,6 +24,7 @@ validation_data_dir = vars(options)['validation_dir']
 weights_path = vars(options)['weights_path']
 result_model_path = vars(options)['result_model_path']
 imsize = vars(options)['imsize']
+rotation_range = 180 if vars(options)['rotate'] else 0
 
 top_model_weights_path = current_dir + '/bottleneck_fc_model.h5'
 img_width, img_height = imsize, imsize	# in vgg16 they are 224,224
@@ -90,7 +92,7 @@ def load_vgg16_CNN_layers(img_width, img_height):
 	return model
 
 def save_bottlebeck_features():
-	datagen = ImageDataGenerator(rescale=1./255)
+	datagen = ImageDataGenerator(rescale=1./255, rotation_range=rotation_range)
 	
 	model = load_vgg16_CNN_layers(img_width, img_height)
 	print('Model loaded.')
