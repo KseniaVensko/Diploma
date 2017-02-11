@@ -17,17 +17,19 @@ recognize_teach_command = 'objectteaching'
 generate_save_command = 'save_generate_model'
 recognize_save_command = 'save_recognize_model'
 
+script_path = os.path.dirname(os.path.abspath(__file__))
+log_file = script_path + '/loggers/agent_logger.txt'
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--count", type=int, default=5)
+parser.add_argument("--metrics_file", type=str, default=script_path + '/agent_metrics.json')
 options = parser.parse_args()
 
 port = vars(options)['port']
 count = vars(options)['count']
+metrics_file = vars(options)['metrics_file']
 my_name = "agent"
-
-script_path = os.path.dirname(os.path.abspath(__file__))
-log_file = script_path + '/loggers/agent_logger.txt'
 
 def accept_tcp_connections():
 	generating_addr = recognition_addr = None
@@ -68,7 +70,8 @@ def send_command_new(data, addr):
 	return data
 
 def write_metrics_to_json(metrics, file_name):
-	with open(script_path + file_name, 'w') as f:
+	print "writing metrics to "  + file_name
+	with open(file_name, 'w') as f:
 		json.dump(metrics, f)	
 
 #s = socket_utils.initialize_server_socket_tcp('',port)
@@ -152,6 +155,7 @@ try:
 			if set(objects) != set(answer):
 				print "prediction was not correct"
 				matches_percentage = float(len(set(objects) & set(answer))) / float(len(objects))
+				one_iteration_metrics['guessing_percentage'] = matches_percentage
 
 				if matches_percentage >= 0.5:
 					more_or_eq_than_half_collage_recornized_count += 1
@@ -182,7 +186,7 @@ try:
 				#~ send_tcp_command(generate_teach_command + ',' + str(False), generating_s)
 				#~ mes = recv_tcp_command(generating_s)
 				send_mes(s, generate_teach_command + ',' + str(False), generating_addr)
-				mes, addr =recv_mes(s)
+				mes, addr = recv_mes(s)
 				
 				
 				print mes
@@ -197,7 +201,7 @@ except (KeyboardInterrupt, SystemExit):
 except:
 	metrics['Status'] = False
 finally:
-	write_metrics_to_json(metrics, 'agent_metrics.json')
+	write_metrics_to_json(metrics, metrics_file)
 
 send_mes(s, generate_save_command + ',' + 'generating_model.h5', generating_addr)
 mes, addr = recv_mes(s)
