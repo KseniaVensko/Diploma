@@ -17,19 +17,19 @@ recognize_teach_command = 'objectteaching'
 generate_save_command = 'save_generate_model'
 recognize_save_command = 'save_recognize_model'
 
+script_path = os.path.dirname(os.path.abspath(__file__))
+log_file = script_path + '/loggers/agent_logger.txt'
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--count", type=int, default=5)
-parser.add_argument("--metrics_file", type=str, default='agent_metrics.json')
+parser.add_argument("--metrics_file", type=str, default=script_path + '/agent_metrics.json')
 options = parser.parse_args()
 
 port = vars(options)['port']
 count = vars(options)['count']
 metrics_file = vars(options)['metrics_file']
 my_name = "agent"
-
-script_path = os.path.dirname(os.path.abspath(__file__))
-log_file = script_path + '/loggers/agent_logger.txt'
 
 def accept_tcp_connections():
 	generating_addr = recognition_addr = None
@@ -70,8 +70,8 @@ def send_command_new(data, addr):
 	return data
 
 def write_metrics_to_json(metrics, file_name):
-	print "writing metrics to " + script_path + '/' + file_name
-	with open(script_path + '/' + file_name, 'w') as f:
+	print "writing metrics to "  + file_name
+	with open(file_name, 'w') as f:
 		json.dump(metrics, f)	
 
 #s = socket_utils.initialize_server_socket_tcp('',port)
