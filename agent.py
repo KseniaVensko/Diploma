@@ -20,10 +20,12 @@ recognize_save_command = 'save_recognize_model'
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--count", type=int, default=5)
+parser.add_argument("--metrics_file", type=str, default='agent_metrics.json')
 options = parser.parse_args()
 
 port = vars(options)['port']
 count = vars(options)['count']
+metrics_file = vars(options)['metrics_file']
 my_name = "agent"
 
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -68,7 +70,8 @@ def send_command_new(data, addr):
 	return data
 
 def write_metrics_to_json(metrics, file_name):
-	with open(script_path + file_name, 'w') as f:
+	print "writing metrics to " + script_path + file_name
+	with open(script_path + '/' + file_name, 'w') as f:
 		json.dump(metrics, f)	
 
 #s = socket_utils.initialize_server_socket_tcp('',port)
@@ -197,7 +200,7 @@ except (KeyboardInterrupt, SystemExit):
 except:
 	metrics['Status'] = False
 finally:
-	write_metrics_to_json(metrics, 'agent_metrics.json')
+	write_metrics_to_json(metrics, metrics_file)
 
 send_mes(s, generate_save_command + ',' + 'generating_model.h5', generating_addr)
 mes, addr = recv_mes(s)
