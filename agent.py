@@ -92,6 +92,7 @@ metrics['Runs'] = []
 generating_miss = 0
 recognizing_miss = 0
 more_or_eq_than_half_collage_recornized_count = 0
+recognition_time = 0
 
 try:
 	for i in range(count):
@@ -122,8 +123,9 @@ try:
 			print 'after generate received another mes ' + mes
 			continue
 		
-		if recognition_time < min_recognition_time:
-			time.sleep(min_recognition_time - recognition_time)
+		time_gap = timeit.default_timer() - recognition_time
+		if time_gap < min_recognition_time:
+			time.sleep(min_recognition_time - time_gap)
 			
 		print 'sending recognize command'
 		#~ send_tcp_command(recognize_command + ',' + name, recognition_s)
@@ -137,13 +139,13 @@ try:
 			socket_utils.send_image(name, recognition_addr, s)
 			
 			start_time = timeit.default_timer()
-			recognition_time = start_time
 		else:
 			print 'after recognize received another mes ' + mes
 			continue
 			
 		#mes = recv_tcp_command(recognition_s)
 		mes,addr = recv_mes(s)
+		recognition_time = timeit.default_timer()
 			
 		one_iteration_metrics['recognition_time'] = timeit.default_timer() - start_time
 
