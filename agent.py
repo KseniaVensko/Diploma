@@ -118,9 +118,10 @@ for i in range(count):
 	if mes.startswith(recognize_success):
 		print 'received predictions'
 		mes = mes.split(':')
-		answer = mes[1].split(',')
+		answer = filter(None, mes[1].split(','))
 		print answer
-		objects = os.path.splitext(os.path.basename(name))[0].split("_")
+		# filter removes Falsish elements ('', False, None, [], ...)
+		objects = filter(None, os.path.splitext(os.path.basename(name))[0].split("_"))
 
 		if set(objects) != set(answer):
 			print "prediction was not correct"
