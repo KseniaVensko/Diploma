@@ -7,6 +7,7 @@ import os
 import logger
 import timeit
 import json
+import time
 
 generate_command = 'generate'
 generate_success = 'imagegenerated'
@@ -24,11 +25,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--count", type=int, default=5)
 parser.add_argument("--metrics_file", type=str, default=script_path + '/agent_metrics.json')
+parser.add_argument("--min_recognition_time", type=float, default=0)
 options = parser.parse_args()
 
 port = vars(options)['port']
 count = vars(options)['count']
 metrics_file = vars(options)['metrics_file']
+min_recognition_time = vars(options)['min_recognition_time']
 my_name = "agent"
 
 def accept_tcp_connections():
@@ -89,6 +92,7 @@ metrics['Runs'] = []
 generating_miss = 0
 recognizing_miss = 0
 more_or_eq_than_half_collage_recornized_count = 0
+recognition_time = 0
 
 try:
 	for i in range(count):
@@ -118,7 +122,11 @@ try:
 		else:
 			print 'after generate received another mes ' + mes
 			continue
-
+		
+		time_gap = timeit.default_timer() - recognition_time
+		if time_gap < min_recognition_time:
+			time.sleep(min_recognition_time - time_gap)
+			
 		print 'sending recognize command'
 		#~ send_tcp_command(recognize_command + ',' + name, recognition_s)
 		#~ mes = recv_tcp_command(recognition_s)
@@ -137,6 +145,7 @@ try:
 			
 		#mes = recv_tcp_command(recognition_s)
 		mes,addr = recv_mes(s)
+		recognition_time = timeit.default_timer()
 			
 		one_iteration_metrics['recognition_time'] = timeit.default_timer() - start_time
 
