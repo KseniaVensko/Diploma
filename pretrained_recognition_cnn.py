@@ -16,7 +16,7 @@ theano.config.openmp = True
 my_name = "pretrained_recognition"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 log_file = current_dir + '/loggers/recognition_logger.txt'
-coef = 0.5
+coef = 0.15
 objects_count = 3
 objects = {}
 
@@ -121,6 +121,7 @@ def teaching(path, objects):
 		y[dict[i]] = 1
 	y = y.reshape((1,-1))
 	print 'training ' + str(objects)
+	print str(y)
 	loss = model.train_on_batch(im,y)
 	print model.metrics_names
 	print loss
