@@ -6,7 +6,6 @@ from keras.models import Sequential
 from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras.utils import np_utils
-import logger
 from keras.preprocessing import image as image_utils
 from keras.models import load_model
 
@@ -18,7 +17,6 @@ def preprocess_im(image_path):
 	image /= 255
 	return image
 
-my_name = 'bottleneck_vgg16'
 weights_path = 'vgg16_weights.h5'
 top_model_weights_path = 'bottleneck_fc_model.h5'
 img_width, img_height = 128, 128	# in vgg16 they are 224,224
