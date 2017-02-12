@@ -68,7 +68,10 @@ def decode_predict_proba(predict):
 	predict = predict[0]
 	print "predict is " + str(predict)
 	summ = sum(predict)
-	percentage_predict = [x / summ for x in predict]
+	if summ == 0:
+		percentage_predict = predict
+	else:
+		percentage_predict = [x / summ for x in predict]
 	print "percentage predict is " + str(percentage_predict)
 	# get indices of objects, that have the probability higher, than coef
 	# and get maximum values
