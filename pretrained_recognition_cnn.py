@@ -22,6 +22,7 @@ objects = {}
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default=current_dir + "/pretrained_vgg16_2.h5")
+parser.add_argument("--objects", type=str, default=current_dir + "/objects.txt")
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--addr", type=str, default='127.0.0.1')
 parser.add_argument("--imsize", type=int, default=128)
@@ -30,6 +31,7 @@ options = parser.parse_args()
 port = vars(options)['port']
 address = vars(options)['addr']
 imsize = vars(options)['imsize']
+objects_file = vars(options)['objects']
 global s
 global model
 # keys is array of objects i.e [bear,crocodile,...]
@@ -53,7 +55,7 @@ def initialize():
 	global keys
 	keys = []
 
-	with open(current_dir + '/objects.txt') as f:
+	with open(objects_file) as f:
 			for line in f:
 				keys.append(line.rstrip('\n'))
 	
