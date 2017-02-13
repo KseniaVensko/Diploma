@@ -12,16 +12,18 @@ log_file = current_dir + '/loggers/recognition_logger.txt'
 coef = 0.5
 objects_count = 3
 objects = {}
-img_width, img_height = 128, 128
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--addr", type=str, default='127.0.0.1')
 parser.add_argument("--key", type=str, default='', help='api key for microsoft computer vision service')
+parser.add_argument("--objects", type=str, default=current_dir + "/objects.txt")
 options = parser.parse_args()
 addr = vars(options)['addr']
 port = vars(options)['port']
 key = vars(options)['key']
+objects_file = vars(options)['objects']
+
 global s
 # keys is array of objects i.e [bear,crocodile,...]
 global keys
@@ -34,7 +36,7 @@ def initialize():
 	global keys
 	keys = []
 
-	with open(current_dir + '/objects.txt') as f:
+	with open(objects_file) as f:
 			for line in f:
 				keys.append(line.rstrip('\n'))
 	
@@ -56,6 +58,7 @@ def cast_tag_to_known_tags(tag):
 	known_tags['rabbit'] = 'rabbit'
 	known_tags['hare'] = 'rabbit'
 	known_tags['sheep'] = 'sheep'
+	known_tags['walrus'] = 'walrus'
 
 	if known_tags.has_key(tag):
 		tag = known_tags[tag]
@@ -68,10 +71,10 @@ def filter_tags(tags):
 	for t in tags:
 		casted_tags.append(cast_tag_to_known_tags(t))
 	print "casted tags " + str(casted_tags)
-	allowed_tags = ['bear', 'dog', 'crocodile', 'kangoro', 'horse', 'sheep', 'rabbit']
+	#allowed_tags = ['bear', 'dog', 'crocodile', 'kangoro', 'horse', 'sheep', 'rabbit']
 	result = []
 	for t in casted_tags:
-		if t in allowed_tags:
+		if t in keys:
 			result.append(t)
 	print "result " + str(result)
 	return result
@@ -99,10 +102,18 @@ while True:
 		send_mes(s, 'waiting', addr)
 		path = socket_utils.receive_image(s)
 		print path
-		recognition_result = filter_tags(recognize_image(path, key))
-		print "sending recognize success with objects " + ", ".join(recognition_result)
-		data = recognize_sucess + ':' + ",".join(recognition_result)
-		send_mes(s, data,addr)
+		try:
+			recognition_result = filter_tags(recognize_image(path, key))
+			print "sending recognize success with objects " + ", ".join(recognition_result)
+			data = recognize_sucess + ':' + ",".join(recognition_result)
+			send_mes(s, data,addr)
+		except (KeyboardInterrupt, SystemExit):
+			raise
+		except BaseException as e:
+			data = str(e)
+			print data
+			send_mes(s, data, addr)
+			
 		
 	elif mes.startswith(recognize_save_command):
 		mes = mes.split(',')

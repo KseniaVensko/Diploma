@@ -24,6 +24,7 @@ log_file = script_path + '/loggers/agent_logger.txt'
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", type=int, default=7777)
 parser.add_argument("--count", type=int, default=5)
+parser.add_argument("--allowed_fail_count", type=int, default=5, help='If recognition fails this count times in sequence, agent will terminate all')
 parser.add_argument("--metrics_file", type=str, default=script_path + '/agent_metrics.json')
 parser.add_argument("--min_recognition_time", type=float, default=0)
 options = parser.parse_args()
@@ -32,6 +33,7 @@ port = vars(options)['port']
 count = vars(options)['count']
 metrics_file = vars(options)['metrics_file']
 min_recognition_time = vars(options)['min_recognition_time']
+allowed_fail_count = vars(options)['allowed_fail_count']
 my_name = "agent"
 
 def accept_tcp_connections():
@@ -66,23 +68,22 @@ def accept_connections():
 			generating_addr = addr
 			i+=1
 	return generating_addr, recognition_addr
-			
-def send_command_new(data, addr):
-	s.sendto(data, addr)
-	data, addr = s.recvfrom(1024)
-	return data
 
 def write_metrics_to_json(metrics, file_name):
 	print "writing metrics to "  + file_name
 	with open(file_name, 'w') as f:
 		json.dump(metrics, f)	
 
-#s = socket_utils.initialize_server_socket_tcp('',port)
+def send_terminate_commands():
+	send_mes(s, generate_save_command + ',' + 'generating_model.h5', generating_addr)
+	mes, addr = recv_mes(s)
+	send_mes(s, recognize_save_command + ',' + 'recognize_model.h5', recognition_addr)
+	mes, addr = recv_mes(s)
+
 s = socket_utils.initialize_server_socket(port)
 
 print("Listening...")
 
-#generating_addr, generating_s, recognition_addr, recognition_s = accept_tcp_connections()
 generating_addr, recognition_addr = accept_connections()
 
 metrics = {}
@@ -93,14 +94,12 @@ generating_miss = 0
 recognizing_miss = 0
 more_or_eq_than_half_collage_recornized_count = 0
 recognition_time = 0
+fail_count = 0
 
 try:
 	for i in range(count):
 		one_iteration_metrics = {}
 		print 'sending generate command'
-
-		#~ send_tcp_command(generate_command, generating_s)
-		#~ mes = recv_tcp_command(generating_s)
 		
 		start_time = timeit.default_timer()
 		
@@ -112,10 +111,8 @@ try:
 		if mes.startswith(generate_success):
 			print 'received answer'
 
-			#send_tcp_command('waiting', generating_s)
 			send_mes(s,'waiting', generating_addr)
 			
-			#name = socket_utils.receive_tcp_image(generating_s)
 			name = socket_utils.receive_image(s)
 			print name
 			logger.write_to_log(log_file,my_name, "received generated image name " + name)
@@ -128,14 +125,11 @@ try:
 			time.sleep(min_recognition_time - time_gap)
 			
 		print 'sending recognize command'
-		#~ send_tcp_command(recognize_command + ',' + name, recognition_s)
-		#~ mes = recv_tcp_command(recognition_s)
 		
 		send_mes(s, recognize_command + ',' + name, recognition_addr)
 		mes, addr = recv_mes(s)
 		
 		if 'waiting' in mes:
-			#socket_utils.send_tcp_image(name, recognition_s)
 			socket_utils.send_image(name, recognition_addr, s)
 			
 			start_time = timeit.default_timer()
@@ -143,13 +137,14 @@ try:
 			print 'after recognize received another mes ' + mes
 			continue
 			
-		#mes = recv_tcp_command(recognition_s)
 		mes,addr = recv_mes(s)
 		recognition_time = timeit.default_timer()
 			
 		one_iteration_metrics['recognition_time'] = timeit.default_timer() - start_time
 
 		if mes.startswith(recognize_success):
+			if fail_count != 0:
+				fail_count = 0
 			print 'received predictions'
 			mes = mes.split(':')
 			answer = filter(None, mes[1].split(','))
@@ -174,15 +169,11 @@ try:
 				logger.write_to_log(log_file,my_name, "correct objects " + str(objects) + "are not equal recognized objects " + str(answer))
 				print "sending teaching commands"
 				
-				#~ send_tcp_command(generate_teach_command + ',' + str(True), generating_s)
-				#~ mes = recv_tcp_command(generating_s)
 				send_mes(s, generate_teach_command + ',' + str(True), generating_addr)
 				mes,addr = recv_mes(s)
 				
 				print mes
 				
-				#~ send_tcp_command(recognize_teach_command + ',' + name + ',' + ','.join(objects), recognition_s)
-				#~ mes = recv_tcp_command(recognition_s)
 				send_mes(s, recognize_teach_command + ',' + name + ',' + ','.join(objects), recognition_addr)
 				mes,addr = recv_mes(s)
 				
@@ -192,15 +183,16 @@ try:
 
 				print "sending generate teach command"
 				
-				#~ send_tcp_command(generate_teach_command + ',' + str(False), generating_s)
-				#~ mes = recv_tcp_command(generating_s)
 				send_mes(s, generate_teach_command + ',' + str(False), generating_addr)
 				mes, addr = recv_mes(s)
-				
-				
+								
 				print mes
 		else:
 			print 'instead of predictions receives another mes ' + mes
+			fail_count += 1
+			if fail_count == allowed_fail_count:
+				write_metrics_to_json(metrics, metrics_file)
+				break
 			continue
 		
 		metrics['Runs'].append(one_iteration_metrics)
@@ -211,11 +203,8 @@ except:
 	metrics['Status'] = False
 finally:
 	write_metrics_to_json(metrics, metrics_file)
-
-send_mes(s, generate_save_command + ',' + 'generating_model.h5', generating_addr)
-mes, addr = recv_mes(s)
-send_mes(s, recognize_save_command + ',' + 'recognize_model.h5', recognition_addr)
-mes, addr = recv_mes(s)
+	
+send_terminate_commands()
 
 print "recognition miss " + str(recognizing_miss)
 print "generating miss " + str(generating_miss)
