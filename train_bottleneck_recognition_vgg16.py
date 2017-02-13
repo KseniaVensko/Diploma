@@ -18,6 +18,7 @@ parser.add_argument("--validation_dir", type=str, default=current_dir + "/images
 parser.add_argument("--weights_path", type=str, default=current_dir + '/vgg16_weights.h5')
 parser.add_argument("--result_model_path", type=str, default=current_dir + '/pretrained_vgg16_3.h5')
 parser.add_argument("--rotate", type=bool, default=False)
+parser.add_argument("--rate", type=float, default=0.0001)
 parser.add_argument("--imsize", type=int, default=224)
 options = parser.parse_args()
 
@@ -26,6 +27,7 @@ validation_data_dir = vars(options)['validation_dir']
 weights_path = vars(options)['weights_path']
 result_model_path = vars(options)['result_model_path']
 imsize = vars(options)['imsize']
+learning_rate = vars(options)['rate']
 rotation_range = 180 if vars(options)['rotate'] else 0
 
 top_model_weights_path = current_dir + '/bottleneck_fc_model.h5'
@@ -175,7 +177,7 @@ def train_top_model():
 	nb_classes = len([d for d in sorted(os.listdir(train_data_dir))])
 	model = initialize_fc_model(train_data.shape[1:], nb_classes)
 
-	adam = Adam(lr=0.0001)
+	adam = Adam(lr=learning_rate)
 	model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'])
 	print 'model compiled'
 	train_labels = find_labels(train_data_dir)
@@ -197,6 +199,6 @@ top_model = initialize_fc_model(input_shape, output_shape)
 top_model.load_weights(top_model_weights_path)
 
 model.add(top_model)
-adam = Adam(lr=0.0001)
+adam = Adam(lr=learning_rate)
 model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'])
 model.save(result_model_path)
