@@ -7,6 +7,8 @@ from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras.utils import np_utils
 import argparse
+from keras.optimizers import Adam
+
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
