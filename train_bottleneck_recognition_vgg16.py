@@ -168,12 +168,12 @@ def initialize_fc_model(input_shape, output_shape):
 
 def train_top_model():
 	train_data = np.load(open('bottleneck_features_train3.npy'))
-#    train_labels = np.array([0] * (nb_train_samples / 2) + [1] * (nb_train_samples / 2))
 
 	validation_data = np.load(open('bottleneck_features_validation3.npy'))
 	nb_classes = len([d for d in sorted(os.listdir(train_data_dir))])
 	model = initialize_fc_model(train_data.shape[1:], nb_classes)
 
+	adam = Adam(lr=0.0001)
 	model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 	print 'model compiled'
 	train_labels = find_labels(train_data_dir)
@@ -195,5 +195,6 @@ top_model = initialize_fc_model(input_shape, output_shape)
 top_model.load_weights(top_model_weights_path)
 
 model.add(top_model)
+adam = Adam(lr=0.0001)
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.save(result_model_path)
