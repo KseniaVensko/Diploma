@@ -179,6 +179,7 @@ try:
 				
 				print mes
 			else:
+				one_iteration_metrics['guessing_percentage'] = 1
 				generating_miss += 1
 
 				print "sending generate teach command"
