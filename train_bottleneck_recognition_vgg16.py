@@ -174,7 +174,7 @@ def train_top_model():
 	model = initialize_fc_model(train_data.shape[1:], nb_classes)
 
 	adam = Adam(lr=0.0001)
-	model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+	model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'])
 	print 'model compiled'
 	train_labels = find_labels(train_data_dir)
 	validation_labels = find_labels(validation_data_dir)
@@ -196,5 +196,5 @@ top_model.load_weights(top_model_weights_path)
 
 model.add(top_model)
 adam = Adam(lr=0.0001)
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'])
 model.save(result_model_path)
