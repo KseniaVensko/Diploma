@@ -16,7 +16,7 @@ theano.config.openmp = True
 my_name = "pretrained_recognition"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 log_file = current_dir + '/loggers/recognition_logger.txt'
-coef = 0.5
+coef = 0.15
 objects_count = 3
 objects = {}
 
@@ -68,7 +68,10 @@ def decode_predict_proba(predict):
 	predict = predict[0]
 	print "predict is " + str(predict)
 	summ = sum(predict)
-	percentage_predict = [x / summ for x in predict]
+	if summ == 0:
+		percentage_predict = predict
+	else:
+		percentage_predict = [x / summ for x in predict]
 	print "percentage predict is " + str(percentage_predict)
 	# get indices of objects, that have the probability higher, than coef
 	# and get maximum values
@@ -121,6 +124,7 @@ def teaching(path, objects):
 		y[dict[i]] = 1
 	y = y.reshape((1,-1))
 	print 'training ' + str(objects)
+	print str(y)
 	loss = model.train_on_batch(im,y)
 	print model.metrics_names
 	print loss
