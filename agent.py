@@ -191,6 +191,8 @@ try:
 			print 'instead of predictions receives another mes ' + mes
 			fail_count += 1
 			if fail_count == allowed_fail_count:
+				metrics['Status'] = False
+				metrics['StatusDescription'] = 'recognition failed ' + mes
 				write_metrics_to_json(metrics, metrics_file)
 				break
 			continue
